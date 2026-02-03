@@ -12,7 +12,7 @@ Focus Bot delivers a single-purpose Telegram-to-Obsidian capture workflow: send 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation** - Bot scaffolding, config validation, auth middleware, /start command
+- [x] **Phase 1: Foundation** - Bot scaffolding, config validation, auth middleware, /start command
 - [ ] **Phase 2: Core Capture** - Message to note with AI-generated title, tags, and frontmatter
 - [ ] **Phase 3: Polish** - /recent command for trust building
 
@@ -30,8 +30,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md - Config validation, TypeScript setup, auth middleware
-- [ ] 01-02-PLAN.md - Start command, bot assembly, entry point with runner
+- [x] 01-01-PLAN.md - Config validation, TypeScript setup, auth middleware
+- [x] 01-02-PLAN.md - Start command, bot assembly, entry point with runner
 
 ### Phase 2: Core Capture
 **Goal**: User sends text message, Claude analyzes it, generates title and tags, writes markdown note to vault, bot confirms
@@ -67,6 +67,6 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/2 | Planned | - |
+| 1. Foundation | 2/2 | Complete | 2026-02-03 |
 | 2. Core Capture | 0/TBD | Not started | - |
 | 3. Polish | 0/TBD | Not started | - |
