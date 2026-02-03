@@ -3,6 +3,7 @@ import { autoRetry } from '@grammyjs/auto-retry';
 import { config } from '../config.js';
 import { authMiddleware } from './middleware/auth.js';
 import { handleStart } from './handlers/command.js';
+import { handleTextMessage } from './handlers/message.js';
 
 export function createBot(): Bot {
   const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
@@ -15,6 +16,9 @@ export function createBot(): Bot {
 
   // Commands
   bot.command('start', handleStart);
+
+  // Message handlers
+  bot.on('message:text', handleTextMessage);
 
   // Error handler
   bot.catch((err) => {
