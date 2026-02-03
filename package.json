@@ -1,0 +1,26 @@
+{
+  "name": "focus-bot",
+  "version": "0.1.0",
+  "description": "Telegram bot that captures messages and saves them as Obsidian notes",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@grammyjs/auto-retry": "2.0.2",
+    "@grammyjs/runner": "2.0.3",
+    "dotenv": "16.5.0",
+    "grammy": "1.39.3",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.29",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
