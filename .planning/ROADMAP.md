@@ -27,10 +27,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Bot fails fast with clear error message if any config is invalid or missing
   3. Unauthorized user receives "not authorized" message and cannot use the bot
   4. Authorized user can send /start and receives help message explaining how to use the bot
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: TBD
+- [ ] 01-01-PLAN.md - Config validation, TypeScript setup, auth middleware
+- [ ] 01-02-PLAN.md - Start command, bot assembly, entry point with runner
 
 ### Phase 2: Core Capture
 **Goal**: User sends text message, Claude analyzes it, generates title and tags, writes markdown note to vault, bot confirms
@@ -66,6 +67,6 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/TBD | Not started | - |
+| 1. Foundation | 0/2 | Planned | - |
 | 2. Core Capture | 0/TBD | Not started | - |
 | 3. Polish | 0/TBD | Not started | - |
