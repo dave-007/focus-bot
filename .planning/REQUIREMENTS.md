@@ -31,7 +31,7 @@
 
 ## v2 Requirements (Deferred)
 
-- Voice message transcription → note
+- Voice message transcription -> note
 - Image attachment handling
 - /search command to find notes
 
@@ -53,19 +53,19 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | — | Pending |
-| AUTH-02 | — | Pending |
-| NOTE-01 | — | Pending |
-| NOTE-02 | — | Pending |
-| NOTE-03 | — | Pending |
-| NOTE-04 | — | Pending |
-| NOTE-05 | — | Pending |
-| NOTE-06 | — | Pending |
-| CMD-01 | — | Pending |
-| CMD-02 | — | Pending |
-| CFG-01 | — | Pending |
-| CFG-02 | — | Pending |
-| CFG-03 | — | Pending |
+| AUTH-01 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| NOTE-01 | Phase 2 | Pending |
+| NOTE-02 | Phase 2 | Pending |
+| NOTE-03 | Phase 2 | Pending |
+| NOTE-04 | Phase 2 | Pending |
+| NOTE-05 | Phase 2 | Pending |
+| NOTE-06 | Phase 2 | Pending |
+| CMD-01 | Phase 1 | Pending |
+| CMD-02 | Phase 3 | Pending |
+| CFG-01 | Phase 1 | Pending |
+| CFG-02 | Phase 1 | Pending |
+| CFG-03 | Phase 1 | Pending |
 
 ---
-*Last updated: 2026-02-03 after requirements definition*
+*Last updated: 2026-02-03 after roadmap creation*
