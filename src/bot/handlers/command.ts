@@ -10,7 +10,11 @@ How to use:
 - The note will be saved to your vault
 
 Commands:
-/start - Show this help message`;
+/start - Show this help message
+/health - Check bot health and uptime
+/status - Show systemd service status
+/logs - Show recent log entries
+/restart - Restart the bot`;
 
 export async function handleStart(ctx: Context): Promise<void> {
   await ctx.reply(helpMessage);

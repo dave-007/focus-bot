@@ -51,3 +51,8 @@ if (!parsed.success) {
 
 export const config = parsed.data;
 export type Config = typeof config;
+
+/**
+ * Derived path: Captures subdirectory within the Obsidian vault.
+ */
+export const CAPTURES_DIR = path.join(config.NOTES_DIR, 'Captures');
