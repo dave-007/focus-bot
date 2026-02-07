@@ -13,6 +13,7 @@
     "@grammyjs/runner": "2.0.3",
     "grammy": "1.39.3",
     "sanitize-filename": "^1.6.3",
+    "telegra.ph": "^1.0.1",
     "zod": "4.3.6"
   },
   "devDependencies": {

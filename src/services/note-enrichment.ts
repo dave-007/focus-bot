@@ -1,11 +1,13 @@
 import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import type { Api } from 'grammy';
 import { config } from '../config.js';
 import { fetchPageMetadata, PageMetadata } from '../utils/html-metadata.js';
 import { fetchArticleText } from '../utils/html-text.js';
-import { appendToNoteBody } from '../utils/note-parser.js';
+import { appendToNoteBody, parseNote, assembleNote } from '../utils/note-parser.js';
 import { isYouTubeUrl, fetchTranscript } from '../utils/youtube.js';
+import { createTelegraphPage } from '../utils/telegraph.js';
 
 export interface EnrichmentContext {
   chatId: number;
@@ -14,8 +16,7 @@ export interface EnrichmentContext {
 }
 
 const CLAUDE_CODE_PATH =
-  process.env.CLAUDE_CODE_PATH ||
-  '/home/n8bot/.local/bin/claude';
+  process.env.CLAUDE_CODE_PATH || 'claude';
 
 /**
  * Process a captured note for enrichment.
@@ -56,6 +57,44 @@ export async function processNote(filePath: string, urls: string[], tg?: Enrichm
   } catch (error) {
     console.error(`[enrichment] Failed to update ${filePath}:`, error);
     return;
+  }
+
+  // Publish summary to Telegraph for a readable link
+  let telegraphUrl: string | null = null;
+  try {
+    const title = path.basename(filePath, '.md');
+    const summaryText = extractSummaryFromSections(sections);
+    if (summaryText) {
+      telegraphUrl = await createTelegraphPage(title, summaryText, urls[0]);
+      if (telegraphUrl) {
+        console.log(`[enrichment] Published to Telegraph: ${telegraphUrl}`);
+      }
+    }
+  } catch (error) {
+    console.warn('[enrichment] Telegraph publishing failed:', error);
+  }
+
+  // Store Telegraph URL in note frontmatter
+  if (telegraphUrl) {
+    try {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const parsed = parseNote(content);
+      parsed.frontmatter += `\ntelegraph: "${telegraphUrl}"`;
+      fs.writeFileSync(filePath, assembleNote(parsed), 'utf-8');
+    } catch (error) {
+      console.warn('[enrichment] Failed to save Telegraph URL to note:', error);
+    }
+  }
+
+  // Reply to user with Telegraph link
+  if (telegraphUrl && tg) {
+    try {
+      await tg.api.sendMessage(tg.chatId, telegraphUrl, {
+        reply_parameters: { message_id: tg.messageId },
+      });
+    } catch (error) {
+      console.warn('[enrichment] Failed to send Telegraph URL:', error);
+    }
   }
 
   // Signal enrichment complete with 💯 (replaces the 👍 from capture)
@@ -227,6 +266,26 @@ async function runSummary(prompt: string, label: string): Promise<string | null>
   }
 
   return null;
+}
+
+/**
+ * Extract clean summary text from enrichment sections.
+ * Strips blockquote prefixes and Obsidian callout syntax for Telegraph publishing.
+ */
+function extractSummaryFromSections(sections: string[]): string | null {
+  const allText = sections.join('\n\n');
+  const lines = allText.split('\n');
+  const cleaned: string[] = [];
+
+  for (const line of lines) {
+    const stripped = line.startsWith('> ') ? line.slice(2) : line;
+    // Skip callout syntax line
+    if (stripped.startsWith('[!summary]')) continue;
+    cleaned.push(stripped);
+  }
+
+  const result = cleaned.join('\n').trim();
+  return result.length > 0 ? result : null;
 }
 
 function extractDomain(url: string): string {

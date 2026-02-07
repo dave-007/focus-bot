@@ -374,7 +374,7 @@ Phase 5: Polish
 **HIGH confidence (official documentation):**
 - [Claude Agent SDK TypeScript Reference](https://platform.claude.com/docs/en/agent-sdk/typescript) - API details, Options type, Query interface
 - [Claude Agent SDK V2 Preview](https://platform.claude.com/docs/en/agent-sdk/typescript-v2-preview) - Simpler session patterns (not needed for Focus Bot, but good to know)
-- Reference implementation: `/home/n8bot/code/focus-bot/CLAUDE-CODE-TELEGRAM-BOT.md` - Claudegram architecture
+- Reference implementation: Claudegram project - Architecture patterns
 
 **MEDIUM confidence (verified patterns):**
 - [Grammy Documentation](https://grammy.dev/) - Bot framework patterns

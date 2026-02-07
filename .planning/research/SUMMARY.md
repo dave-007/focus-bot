@@ -233,7 +233,7 @@ None of these gaps require upfront research - they'll be resolved through implem
 - [obsidian-telegram-sync GitHub](https://github.com/soberhacker/obsidian-telegram-sync) - Competitive analysis
 - [tg2obsidian GitHub](https://github.com/dimonier/tg2obsidian) - Feature comparison
 - [Zapier: Best Note Taking Apps 2026](https://zapier.com/blog/best-note-taking-apps/) - Feature expectations
-- Reference implementation: `/home/n8bot/code/focus-bot/CLAUDE-CODE-TELEGRAM-BOT.md` (Claudegram) - Architecture patterns
+- Reference implementation: Claudegram project - Architecture patterns
 
 ### Tertiary (LOW confidence, informative only)
 - [Claude Code Subagent Mistakes](https://dev.to/alireza_rezvani/4-claude-code-subagent-mistakes-that-kill-your-workflow-and-the-fixes-3n72) - Anecdotal pitfalls

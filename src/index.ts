@@ -1,12 +1,19 @@
+import * as fs from 'node:fs';
 import { run } from '@grammyjs/runner';
 import { createBot } from './bot/bot.js';
-import { config, loadCategories } from './config.js';
+import { config, loadCategories, BOOKMARKS_DIR } from './config.js';
 import { helpMessage } from './bot/handlers/command.js';
 
 async function main(): Promise<void> {
   // Load categories from vault at startup (fails fast if Categories/ missing)
   const categories = loadCategories();
   console.log(`Loaded ${categories.length} categories: ${categories.join(', ')}`);
+
+  // Ensure Bookmarks directory exists for URL-based notes
+  if (!fs.existsSync(BOOKMARKS_DIR)) {
+    fs.mkdirSync(BOOKMARKS_DIR);
+    console.log(`Created Bookmarks directory: ${BOOKMARKS_DIR}`);
+  }
 
   const bot = createBot();
 

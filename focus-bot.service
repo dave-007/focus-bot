@@ -4,13 +4,12 @@ After=network.target
 
 [Service]
 Type=simple
-User=n8bot
-WorkingDirectory=/home/n8bot/code/focus-bot
-Environment="PATH=/home/n8bot/.local/bin:/home/n8bot/.bun/bin:/usr/local/bin:/usr/bin:/bin"
-ExecStart=/home/n8bot/.bun/bin/bun run start
+User=%USER%
+WorkingDirectory=%WORKING_DIR%
+ExecStart=%BUN_PATH% run start
 Restart=always
 RestartSec=5
-EnvironmentFile=/home/n8bot/code/focus-bot/.env
+EnvironmentFile=%WORKING_DIR%/.env
 
 [Install]
 WantedBy=multi-user.target

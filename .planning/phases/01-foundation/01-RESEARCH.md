@@ -409,7 +409,7 @@ TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 ALLOWED_USER_IDS=123456789,987654321
 
 # Required: Absolute path to Obsidian vault
-NOTES_DIR=/home/user/obsidian-vault/inbox
+NOTES_DIR=/path/to/obsidian-vault
 ```
 
 ## State of the Art
@@ -452,7 +452,7 @@ Things that couldn't be fully resolved:
 ### Secondary (MEDIUM confidence)
 - [Grammy Middleware Guide](https://grammy.dev/guide/middleware) - Middleware chain, next() pattern
 - [Environment Variable Validation with Zod](https://www.creatures.sh/blog/env-type-safety-and-validation/) - Fail-fast patterns
-- Project research: `/home/n8bot/code/focus-bot/.planning/research/SUMMARY.md` - Stack decisions
+- Project research: `.planning/research/SUMMARY.md` - Stack decisions
 
 ### Tertiary (LOW confidence)
 - [bot-base/telegram-bot-template](https://github.com/bot-base/telegram-bot-template) - Community patterns

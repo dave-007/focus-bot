@@ -5,16 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-02-06)
 
 **Core value:** Message -> Note. No friction, no decisions. Just send a thought and it's captured with intelligent metadata.
-**Current focus:** MVP complete. Next: URL/bookmark capture (Phase 4)
+**Current focus:** Milestone 1 complete. Phase 4 (URL/Bookmark Capture) delivered.
 
 ## Current Position
 
-Phase: 3 of 3 complete (Milestone 1: MVP done)
-Next: Phase 4 (URL/Bookmark Capture) -- Milestone 2: Enrichment
-Status: Ready for Phase 4 planning
-Last activity: 2026-02-06 - Steph Ango vault restructure + polish
+Phase: 4 of 4 complete (Milestone 1 + Phase 4)
+Status: All planned features delivered
+Last activity: 2026-02-06 - Telegraph publishing + Bookmarks directory
 
-Progress: [██████████] 100% (Milestone 1)
+Progress: [██████████] 100%
 
 ## Accumulated Context
 
@@ -23,32 +22,28 @@ Progress: [██████████] 100% (Milestone 1)
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Phase 3]: Steph Ango vault patterns adopted (categories as wiki-links, topics replace tags)
-- [Phase 3]: Categories constrained to files in Categories/ directory (loaded at startup)
-- [Phase 3]: Topics as freeform wiki-links (2-5 per note, replaces flat tags)
-- [Phase 3]: Inline [[wiki-links]] in note body (same Claude call, zero extra latency)
-- [Phase 3]: Notes go to vault root (no Captures/ subdirectory)
-- [Phase 3]: `[[Captures]]` always included as a category
-- [Phase 3]: `captured` replaces `created` in frontmatter
-- [Phase 3]: Removed build step (Bun runs TypeScript directly)
-- [Phase 3]: /restart in Telegram command menu
-- [Phase 3]: Startup notification sent to all allowed users
-- [Phase 3]: /recent dropped (Telegram history serves this function)
+- [Phase 4]: URL notes route to NOTES_DIR/Bookmarks/ (text notes stay in vault root)
+- [Phase 4]: Telegraph (telegra.ph) publishes readable summaries of URL content
+- [Phase 4]: Telegraph account auto-created and persisted in .telegraph-account.json
+- [Phase 4]: Telegraph link sent as reply to user's original message
+- [Phase 4]: Telegraph URL stored in note frontmatter (`telegraph:` field)
+- [Phase 4]: YouTube transcripts fetched via yt-dlp, summarized via Claude haiku
+- [Phase 4]: Generic URLs: article text fetched, summarized via Claude haiku
+- [Phase 4]: Enrichment failures logged but never surface to user
 
 ### Pending Todos
 
-- Test Phase 3 changes end-to-end (send message, verify note format)
-- Phase 4 (URL/bookmark capture) needs planning
-- Update systemd service file if needed after testing
+- Consider voice note support (transcribe audio + capture pipeline)
+- Consider review commands (/inbox, /review)
 
 ### Blockers/Concerns
 
-None - Phase 3 complete, bot has been restructured.
+None.
 
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Phase 3 complete, docs updated, ready for Phase 4
+Stopped at: Phase 4 complete, ready for public release
 Resume file: .planning/WHATSNEXT.md
 
 ## What's Been Delivered
@@ -63,7 +58,7 @@ Resume file: .planning/WHATSNEXT.md
 ### Phase 2: Core Capture (Complete - 2026-02-05)
 - Note capture service: Claude haiku metadata extraction + direct file writing
 - Text message handler wired to bot
-- Enriched frontmatter (created, tags, source, status)
+- Enriched frontmatter (captured, categories, topics, source, status)
 - Fire-and-forget enrichment stub
 - Admin commands (/health, /status, /logs, /restart)
 - systemd service file for production
@@ -78,7 +73,16 @@ Resume file: .planning/WHATSNEXT.md
 - Removed build step (Bun runs TS directly)
 - /restart in Telegram command menu
 - Startup notification to allowed users on boot
-- Updated /start help text, CLAUDE.md, README.md, all planning docs
+
+### Phase 4: URL/Bookmark Capture (Complete - 2026-02-06)
+- URL detection and extraction in messages
+- YouTube transcript fetching via yt-dlp + AI summarization
+- Generic URL article text extraction + AI summarization
+- Telegraph (telegra.ph) publishing for readable summary links
+- Telegraph URL stored in note frontmatter
+- Telegraph link sent as reply to user
+- URL notes route to Bookmarks/ directory
+- Reaction feedback: 👍 on capture, 💯 on enrichment complete
 
 ### Research
 - 2026-02-05: Second brain methodologies, feature prioritization, competitive landscape

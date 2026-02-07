@@ -26,8 +26,8 @@ npx tsc --noEmit
 
 ### Message Flow
 ```
-Telegram → Grammy Bot → Auth Middleware → Message Handler → Note Capture Service → fs.writeFileSync → NOTES_DIR/
-                                                         → (async) Note Enrichment Service (stub)
+Telegram → Grammy Bot → Auth Middleware → Message Handler → Note Capture Service → fs.writeFileSync → NOTES_DIR/ or Bookmarks/
+                                                         → (async) Note Enrichment Service → Telegraph → Reply with link
 ```
 
 1. Grammy receives Telegram update via long polling (`@grammyjs/runner`)
@@ -37,18 +37,19 @@ Telegram → Grammy Bot → Auth Middleware → Message Handler → Note Capture
    - **Metadata extraction**: Claude haiku analyzes message, returns JSON `{title, categories, topics, body}`
    - Categories are constrained to files in `NOTES_DIR/Categories/` (loaded at startup)
    - Body includes inline `[[wiki-links]]` for key concepts
-   - **File writing**: Direct `fs.writeFileSync` to `NOTES_DIR`
-5. Handler replies to user with "Saved: [title]"
-6. Handler fires `processNote()` as fire-and-forget (async enrichment, currently a stub)
+   - **File writing**: Direct `fs.writeFileSync` to `NOTES_DIR` (text notes) or `Bookmarks/` (URL notes)
+5. Handler replies to user with 👍 reaction
+6. Handler fires `processNote()` as fire-and-forget (async enrichment for URLs)
 
 ### Key Files
 - `src/index.ts` - Entry point, bot startup, categories loading, graceful shutdown
-- `src/config.ts` - Zod-validated environment configuration + `CATEGORIES_DIR` + `loadCategories()`
+- `src/config.ts` - Zod-validated environment configuration + `CATEGORIES_DIR` + `BOOKMARKS_DIR` + `loadCategories()`
 - `src/bot/bot.ts` - Grammy bot initialization, middleware/handler registration
 - `src/bot/middleware/auth.ts` - User whitelist enforcement
 - `src/bot/handlers/message.ts` - Routes text messages to note capture, fires async enrichment
 - `src/services/note-capture.ts` - Core logic: metadata extraction + direct file writing
-- `src/services/note-enrichment.ts` - Async enrichment stub (future: URL metadata, vault scanning)
+- `src/services/note-enrichment.ts` - Async URL enrichment: AI summaries, Telegraph publishing, frontmatter updates
+- `src/utils/telegraph.ts` - Telegraph (telegra.ph) client: account management, content conversion, page creation
 
 ### Claude Agent SDK Usage Pattern
 
@@ -64,11 +65,23 @@ File writing is done directly via `fs.writeFileSync` — no Claude SDK involved.
 
 ### Async Enrichment Architecture
 
-After the fast capture path completes and the user gets their reply, the message handler fires `processNote()` as a fire-and-forget call. This is currently a no-op stub. Future enrichment tasks:
-- URL/bookmark metadata fetching
-- Vault-aware link suggestions
+After the fast capture path completes and the user gets their 👍 reaction, the message handler fires `processNote()` as a fire-and-forget call:
+
+1. **YouTube URLs**: Fetches transcript via `yt-dlp`, generates AI summary via Claude haiku
+2. **Generic URLs**: Fetches article text, generates AI summary via Claude haiku
+3. **Telegraph publishing**: Summary is published to telegra.ph for a readable Instant View link
+4. **Frontmatter update**: Telegraph URL stored in note's `telegraph:` field
+5. **Reply**: Telegraph link sent as a reply to the user's original message
+6. **Reaction**: 💯 replaces the 👍 when enrichment completes
+
+Telegraph account credentials are persisted in `.telegraph-account.json` (auto-created on first use).
 
 Enrichment failures are logged but never surface to the user.
+
+### Note Routing
+
+- **Text notes** (no URLs): Written to `NOTES_DIR/` root
+- **URL notes** (bookmarks, links): Written to `NOTES_DIR/Bookmarks/` (auto-created at startup)
 
 ## Configuration
 
@@ -81,6 +94,7 @@ Required environment variables (validated at startup):
 
 Derived values:
 - **`CATEGORIES_DIR`** — `NOTES_DIR/Categories/` (must exist, read at startup)
+- **`BOOKMARKS_DIR`** — `NOTES_DIR/Bookmarks/` (auto-created at startup)
 
 ## Note Format
 
@@ -108,7 +122,8 @@ One way to prove or overcome the subjectiveness of [[consciousness]] or [[qualia
 - **categories**: Wiki-links to hub notes in `Categories/` directory. `[[Captures]]` always included.
 - **topics**: Wiki-links for subject matter (freeform, AI-generated)
 - **Body**: Original message with inline `[[wiki-links]]` for key concepts
-- **Location**: `NOTES_DIR` root
+- **telegraph**: Telegraph URL for readable summary (added async by enrichment, URL notes only)
+- **Location**: `NOTES_DIR` root (text notes) or `NOTES_DIR/Bookmarks/` (URL notes)
 
 ## Planning Documentation
 

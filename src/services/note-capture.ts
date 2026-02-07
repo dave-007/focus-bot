@@ -3,14 +3,12 @@ import * as path from 'node:path';
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import { z } from 'zod';
 import sanitize from 'sanitize-filename';
-import { config, loadCategories } from '../config.js';
+import { config, loadCategories, BOOKMARKS_DIR } from '../config.js';
 import { fetchPageMetadata } from '../utils/html-metadata.js';
 import { extractUrls } from '../utils/url.js';
 
-// Path to Claude Code executable
 const CLAUDE_CODE_PATH =
-  process.env.CLAUDE_CODE_PATH ||
-  '/home/n8bot/.local/bin/claude';
+  process.env.CLAUDE_CODE_PATH || 'claude';
 
 /**
  * Schema for note metadata extracted by Claude.
@@ -156,7 +154,8 @@ export async function captureNote(
   const metadata = await extractMetadata(message, urls, urlMeta);
   const filename = generateFilename(metadata.title);
   const content = generateNoteContent(metadata, primaryUrl);
-  const filePath = path.join(config.NOTES_DIR, filename);
+  const targetDir = urls.length > 0 ? BOOKMARKS_DIR : config.NOTES_DIR;
+  const filePath = path.join(targetDir, filename);
   fs.writeFileSync(filePath, content, 'utf-8');
 
   return { title: metadata.title, filePath, urls };

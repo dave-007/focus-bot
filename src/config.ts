@@ -66,6 +66,11 @@ export type Config = typeof config;
 export const CATEGORIES_DIR = path.join(config.NOTES_DIR, 'Categories');
 
 /**
+ * Derived path: Bookmarks subdirectory for URL-based notes.
+ */
+export const BOOKMARKS_DIR = path.join(config.NOTES_DIR, 'Bookmarks');
+
+/**
  * Load category names from the Categories/ directory.
  * Returns an array of category names (filenames without .md extension).
  */

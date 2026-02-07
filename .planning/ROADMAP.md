@@ -12,7 +12,7 @@ Focus Bot delivers a single-purpose Telegram-to-Obsidian capture workflow: send 
 
 ## Milestone 2: Enrichment
 
-- [ ] **Phase 4: URL/Bookmark Capture** - Auto-detect URLs, add to frontmatter, async fetch page metadata
+- [x] **Phase 4: URL/Bookmark Capture** - URL detection, AI summaries, Telegraph publishing, Bookmarks directory
 - [ ] **Phase 5: TBD** - Future enrichment features based on usage
 
 ## Phase Details
@@ -46,26 +46,17 @@ Additional work beyond plans:
   5. `[[Captures]]` always included as a category
   6. /restart in Telegram menu, startup notification on boot
 
-Work completed:
-- Researched Steph Ango's vault system (article, repo, templates, property patterns)
-- Researched Obsidian wiki-links in frontmatter (native support, Dataview, plugins)
-- Restructured config (CAPTURES_DIR -> CATEGORIES_DIR + loadCategories())
-- Restructured note capture service (new schema, prompt, frontmatter format)
-- Notes go to NOTES_DIR root
-- Removed build step (Bun runs TS directly)
-- /restart in command menu, startup notification to allowed users
-- Updated all documentation (CLAUDE.md, README.md)
-
-### Phase 4: URL/Bookmark Capture (Not started)
-**Goal**: Auto-detect URLs in messages, add to frontmatter, async fetch page metadata
-**Depends on**: Phase 3
+### Phase 4: URL/Bookmark Capture (Complete - 2026-02-06)
+**Goal**: Detect URLs in messages, generate AI summaries, publish to Telegraph, save to Bookmarks directory
 **Success Criteria**:
   1. Messages containing URLs get `url` field in frontmatter
-  2. Claude generates URL-aware title/categories (likely "References" category)
-  3. Async enrichment fetches page title, description, og metadata
-  4. Link preview appended to note body after capture
-  5. Non-URL messages unaffected
-  6. Enrichment failures never crash bot or block user
+  2. YouTube URLs: transcript fetched via yt-dlp, AI summary generated
+  3. Generic URLs: article text fetched, AI summary generated
+  4. Summaries published to telegra.ph with readable Instant View link
+  5. Telegraph URL sent as reply and stored in frontmatter
+  6. URL notes saved to NOTES_DIR/Bookmarks/
+  7. Reaction feedback: 👍 on capture, 💯 on enrichment complete
+  8. Enrichment failures never crash bot or block user
 
 ## Progress
 
@@ -74,4 +65,4 @@ Work completed:
 | 1. Foundation | Complete | 2026-02-03 |
 | 2. Core Capture | Complete | 2026-02-05 |
 | 3. Vault Integration | Complete | 2026-02-06 |
-| 4. URL/Bookmark Capture | Not started | - |
+| 4. URL/Bookmark Capture | Complete | 2026-02-06 |
