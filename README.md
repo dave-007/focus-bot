@@ -2,9 +2,17 @@
 
 ![Focus Bot](public/focus-bot-hero.png)
 
-A Telegram bot that captures thoughts and bookmarks as Obsidian markdown notes. Send a message, get an AI-organized note with a title, categories, topics, and inline `[[wiki-links]]`. Share a link, get an AI summary published to [Telegraph](https://telegra.ph) for instant reading.
+A Telegram bot that captures thoughts and bookmarks as Obsidian markdown notes. Send a message, get an AI-organized note with a title, type-based tags, and inline `[[wiki-links]]`. Share a link, get an AI summary published to [Telegraph](https://telegra.ph) for instant reading.
 
-Organization follows [Steph Ango's vault patterns](https://stephango.com/vault).
+## Organization Philosophy
+
+Focus Bot takes a **bottom-up** approach to knowledge organization. Instead of requiring you to decide where something goes before you capture it, you just send a thought and the structure emerges naturally over time.
+
+**Tags classify *what* something is.** They describe the type of capture — `ideas`, `quotes`, `articles`, `books`, `recipes` — not what it's about. Tags answer "what kind of thing is this?" and help you filter your vault by format or content type.
+
+**Wiki-links classify *what* something is about.** Inline `[[wiki-links]]` are woven into the note body around key concepts, proper names, and ideas worth exploring. They create organic connections between notes without any upfront taxonomy. Over time, frequently linked concepts naturally become hubs in your knowledge graph.
+
+This is intentionally the opposite of top-down systems that force you to pick a folder or category first. There's no hierarchy to maintain, no folders to organize into, no categories to predefine. Just tags for *type* and wiki-links for *meaning* — and the graph takes care of the rest.
 
 ## How It Works
 
@@ -22,17 +30,18 @@ Creates `Mycelium Communication Networks.md`:
 captured: 2026-02-06T14:34
 source: telegram
 status: inbox
-categories:
-  - "[[Captures]]"
-  - "[[Ideas]]"
-topics:
-  - "[[Mycelium Networks]]"
-  - "[[Plant Communication]]"
+tags:
+  - captures
+  - ideas
 ---
 I've been thinking about how [[trees]] communicate through [[mycelium]] networks underground
 ```
 
-**URLs** (YouTube videos, articles, blog posts) are saved to a `Bookmarks/` subdirectory with AI-generated summaries. Summaries are published to Telegraph so you can read them right from Telegram:
+- **Filename** is the AI-generated title (Obsidian convention — no title in frontmatter)
+- **Tags** describe the type of capture (`captures` is always included automatically)
+- **Wiki-links** connect the note to concepts in your vault
+
+**URLs** (YouTube videos, articles, blog posts) are saved to a `Bookmarks/` subdirectory with AI-generated summaries published to Telegraph:
 
 ```
 You: https://www.youtube.com/watch?v=example
@@ -45,20 +54,19 @@ Creates `Bookmarks/Video Title.md` with frontmatter, the original URL, an AI sum
 
 ## Features
 
-- **Instant capture** -- Send a thought, get a note. No friction.
-- **AI metadata** -- Claude generates titles, categories, topics, and inline `[[wiki-links]]`
-- **URL enrichment** -- YouTube transcripts and article text summarized by AI
-- **Telegraph publishing** -- Readable summaries via Telegram's Instant View
-- **Vault-native** -- Categories constrained to your vault's `Categories/` hub notes
-- **Bookmarks** -- URL notes saved separately in `Bookmarks/` directory
-- **Access control** -- User whitelist restricts who can use the bot
+- **Instant capture** — Send a thought, get a note. No friction.
+- **AI metadata** — Claude generates titles, type-based tags, and inline `[[wiki-links]]`
+- **URL enrichment** — YouTube transcripts and article text summarized by AI
+- **Telegraph publishing** — Readable summaries via Telegram's Instant View
+- **Bookmarks** — URL notes saved separately in `Bookmarks/` directory
+- **Access control** — User whitelist restricts who can use the bot
 
 ## Prerequisites
 
 - [Bun](https://bun.sh/) runtime
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI (`claude` in PATH)
 - Telegram bot token from [@BotFather](https://t.me/BotFather)
-- Obsidian vault with a `Categories/` directory containing hub note `.md` files
+- Obsidian vault directory
 - For YouTube transcripts: [yt-dlp](https://github.com/yt-dlp/yt-dlp) installed
 
 ## Setup
@@ -75,17 +83,13 @@ cp .env.example .env
 
 Edit `.env` with your values:
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `TELEGRAM_BOT_TOKEN` | Yes | Bot token from [@BotFather](https://t.me/BotFather) |
-| `ALLOWED_USER_IDS` | Yes | Comma-separated Telegram user IDs |
-| `NOTES_DIR` | Yes | Absolute path to your Obsidian vault root |
-| `ANTHROPIC_API_KEY` | No | Anthropic API key (uses Claude subscription if not set) |
-| `CAPTURE_MODEL` | No | Claude model for capture (default: `haiku`) |
-| `ENRICHMENT_MODEL` | No | Claude model for summaries (default: `haiku`) |
-| `CLAUDE_CODE_PATH` | No | Path to `claude` CLI (default: resolved via PATH) |
-
-Your vault must contain a `Categories/` directory with `.md` files (e.g., `Categories/Ideas.md`, `Categories/Clippings.md`). The bot reads these at startup to constrain AI-generated categories.
+- **`TELEGRAM_BOT_TOKEN`** (required) — Bot token from [@BotFather](https://t.me/BotFather)
+- **`ALLOWED_USER_IDS`** (required) — Comma-separated Telegram user IDs
+- **`NOTES_DIR`** (required) — Absolute path to your Obsidian vault root
+- **`ANTHROPIC_API_KEY`** (optional) — Anthropic API key (uses Claude subscription if not set)
+- **`CAPTURE_MODEL`** (optional) — Claude model for capture (default: `haiku`)
+- **`ENRICHMENT_MODEL`** (optional) — Claude model for summaries (default: `haiku`)
+- **`CLAUDE_CODE_PATH`** (optional) — Path to `claude` CLI (default: resolved via PATH)
 
 To find your Telegram user ID, message [@userinfobot](https://t.me/userinfobot).
 
@@ -95,13 +99,7 @@ The bot expects and creates this structure:
 
 ```
 your-vault/
-  Categories/        # Required -- hub notes that define valid categories
-    Captures.md
-    Ideas.md
-    Clippings.md
-    References.md
-    ...
-  Bookmarks/         # Auto-created -- URL-based notes go here
+  Bookmarks/         # Auto-created — URL-based notes go here
     Article Title.md
     Video Title.md
   Note Title.md      # Text notes go in vault root
@@ -122,21 +120,17 @@ bun run start
 
 ### Telegram Commands
 
-| Command | Description |
-|---------|-------------|
-| `/start` | Show help message |
-| `/health` | Check bot health and uptime |
-| `/status` | Show systemd service status |
-| `/logs` | Show recent log entries |
-| `/restart` | Restart the bot service |
+- `/start` — Show help message
+- `/health` — Check bot health and uptime
+- `/status` — Show systemd service status
+- `/logs` — Show recent log entries
+- `/restart` — Restart the bot service
 
 ### Message Types
 
-| You send | What happens |
-|----------|-------------|
-| Text message | Saved as note in vault root with AI metadata |
-| URL | Saved to `Bookmarks/`, summary published to Telegraph |
-| YouTube link | Transcript fetched, summarized, published to Telegraph |
+- **Text message** — Saved as note in vault root with AI metadata
+- **URL** — Saved to `Bookmarks/`, summary published to Telegraph
+- **YouTube link** — Transcript fetched, summarized, published to Telegraph
 
 ## Production Deployment
 
@@ -144,11 +138,9 @@ bun run start
 
 A template service file is included at `focus-bot.service`. Replace the placeholders before installing:
 
-| Placeholder | Replace with |
-|-------------|-------------|
-| `%USER%` | Your system username |
-| `%WORKING_DIR%` | Absolute path to the focus-bot directory |
-| `%BUN_PATH%` | Absolute path to the `bun` binary (run `which bun`) |
+- `%USER%` — Your system username
+- `%WORKING_DIR%` — Absolute path to the focus-bot directory
+- `%BUN_PATH%` — Absolute path to the `bun` binary (run `which bun`)
 
 ```bash
 # Edit the service file with your values
@@ -190,11 +182,31 @@ Telegram → Grammy Bot → Auth Middleware → Message Handler
 
 1. [Grammy](https://grammy.dev/) receives updates via long polling
 2. Auth middleware checks user ID against whitelist
-3. `captureNote()` extracts metadata via Claude, writes `.md` file (fast path)
+3. `captureNote()` extracts metadata (title, tags, body) via Claude, writes `.md` file (fast path)
 4. `processNote()` runs async: fetches content, generates AI summary, publishes to Telegraph
 5. User gets 👍 immediately, then a Telegraph link reply, then 💯 when done
 
 ## Note Format
+
+### Text Notes
+
+Saved to vault root:
+
+```markdown
+---
+captured: 2026-02-06T14:34
+source: telegram
+status: inbox
+tags:
+  - captures
+  - ideas
+---
+I've been thinking about how [[trees]] communicate through [[mycelium]] networks underground
+```
+
+### URL Notes (Bookmarks)
+
+Saved to `Bookmarks/`:
 
 ```markdown
 ---
@@ -203,12 +215,10 @@ source: telegram
 status: inbox
 url: "https://example.com/article"
 telegraph: "https://telegra.ph/Article-Title-02-06"
-categories:
-  - "[[Captures]]"
-  - "[[Clippings]]"
-topics:
-  - "[[Machine Learning]]"
-  - "[[Neural Networks]]"
+tags:
+  - captures
+  - articles
+  - links
 ---
 Check out this article on [[machine learning]] https://example.com/article
 
@@ -222,21 +232,28 @@ Check out this article on [[machine learning]] https://example.com/article
 > - Key point two
 ```
 
-- **Filename** is the AI-generated title (Obsidian convention)
-- **`url`** and **`telegraph`** fields only present for URL notes
-- **Categories** are wiki-links constrained to your `Categories/` directory
-- **Topics** are freeform wiki-links for subject matter
-- **Body** has inline `[[wiki-links]]` for key concepts
-- **Summary** is in an Obsidian callout block (collapsible in Obsidian)
+### Tag Examples
+
+Tags describe what *type* of capture a note is — always plural, never topical:
+
+- `captures` — Always included (code-enforced)
+- `ideas` — Original thoughts, speculations
+- `quotes` — Attributed quotes, passages
+- `articles` — Links to articles, blog posts
+- `links` — Generic bookmarks
+- `books` — Book references, reading notes
+- `recipes`, `poems`, `songs`, `tools`, `movies` — Other content types
+
+Subject matter connections are handled entirely by `[[wiki-links]]` in the note body.
 
 ## Tech Stack
 
-- [Bun](https://bun.sh/) -- Runtime (runs TypeScript directly, no build step)
-- [Grammy](https://grammy.dev/) -- Telegram bot framework
-- [Claude Agent SDK](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk) -- AI metadata extraction and summarization
-- [Zod](https://zod.dev/) -- Config validation and response parsing
-- [telegra.ph](https://www.npmjs.com/package/telegra.ph) -- Telegraph page publishing
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp) -- YouTube transcript fetching
+- [Bun](https://bun.sh/) — Runtime (runs TypeScript directly, no build step)
+- [Grammy](https://grammy.dev/) — Telegram bot framework
+- [Claude Agent SDK](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk) — AI metadata extraction and summarization
+- [Zod](https://zod.dev/) — Config validation and response parsing
+- [telegra.ph](https://www.npmjs.com/package/telegra.ph) — Telegraph page publishing
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) — YouTube transcript fetching
 
 ## License
 
