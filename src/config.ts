@@ -45,6 +45,10 @@ const envSchema = z.object({
   ENRICHMENT_MODEL: z
     .string()
     .default('haiku'),
+
+  GROQ_API_KEY: z
+    .string()
+    .min(1, 'GROQ_API_KEY is required for voice transcription'),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -56,6 +56,7 @@ Creates `Bookmarks/Video Title.md` with frontmatter, the original URL, an AI sum
 
 - **Instant capture** — Send a thought, get a note. No friction.
 - **AI metadata** — Claude generates titles, type-based tags, and inline `[[wiki-links]]`
+- **Voice notes** — Dictate notes via voice messages with Groq Whisper transcription and multi-turn editing
 - **URL enrichment** — YouTube transcripts and article text summarized by AI
 - **Telegraph publishing** — Readable summaries via Telegram's Instant View
 - **Bookmarks** — URL notes saved separately in `Bookmarks/` directory
@@ -68,6 +69,7 @@ Creates `Bookmarks/Video Title.md` with frontmatter, the original URL, an AI sum
 - Telegram bot token from [@BotFather](https://t.me/BotFather)
 - Obsidian vault directory
 - For YouTube transcripts: [yt-dlp](https://github.com/yt-dlp/yt-dlp) installed
+- For voice transcription: [Groq](https://groq.com/) API key
 
 ## Setup
 
@@ -89,6 +91,7 @@ Edit `.env` with your values:
 - **`ANTHROPIC_API_KEY`** (optional) — Anthropic API key (uses Claude subscription if not set)
 - **`CAPTURE_MODEL`** (optional) — Claude model for capture (default: `haiku`)
 - **`ENRICHMENT_MODEL`** (optional) — Claude model for summaries (default: `haiku`)
+- **`GROQ_API_KEY`** (required) — Groq API key for voice transcription (Whisper)
 - **`CLAUDE_CODE_PATH`** (optional) — Path to `claude` CLI (default: resolved via PATH)
 
 To find your Telegram user ID, message [@userinfobot](https://t.me/userinfobot).
@@ -129,6 +132,7 @@ bun run start
 ### Message Types
 
 - **Text message** — Saved as note in vault root with AI metadata
+- **Voice message** — Transcribed via Groq Whisper, then processed as a draft note with multi-turn editing (send follow-up voice or text messages to refine, react with 👍 to save)
 - **URL** — Saved to `Bookmarks/`, summary published to Telegraph
 - **YouTube link** — Transcript fetched, summarized, published to Telegraph
 
@@ -254,6 +258,7 @@ Subject matter connections are handled entirely by `[[wiki-links]]` in the note 
 - [Zod](https://zod.dev/) — Config validation and response parsing
 - [telegra.ph](https://www.npmjs.com/package/telegra.ph) — Telegraph page publishing
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) — YouTube transcript fetching
+- [Groq](https://groq.com/) — Voice transcription (Whisper large-v3-turbo)
 
 ## License
 

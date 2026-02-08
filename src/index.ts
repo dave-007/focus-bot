@@ -22,7 +22,13 @@ async function main(): Promise<void> {
     { command: 'restart', description: 'Restart the bot' },
   ]);
 
-  const handle = run(bot);
+  const handle = run(bot, {
+    runner: {
+      fetch: {
+        allowed_updates: ['message', 'message_reaction'],
+      },
+    },
+  });
 
   // Notify allowed users that the bot is online
   for (const userId of config.ALLOWED_USER_IDS) {
