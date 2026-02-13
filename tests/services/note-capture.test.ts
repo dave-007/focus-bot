@@ -125,4 +125,19 @@ describe('captureNote', () => {
     const match = content.match(/captured: (\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/);
     expect(match).not.toBeNull();
   });
+
+  test('appends timestamp to filename when file already exists', async () => {
+    // Simulate that the first filename attempt already exists on disk
+    mocks.fs.existsSyncResult = (p: string) => {
+      // Only the initial "Test Note Title.md" exists, the timestamped one does not
+      return p.endsWith('Test Note Title.md');
+    };
+
+    const result = await captureNote('Some thought');
+
+    // Should NOT be the bare title — should have a timestamp appended
+    expect(result.filePath).not.toEndWith('Test Note Title.md');
+    expect(result.filePath).toMatch(/Test Note Title \d+\.md$/);
+    expect(result.filePath).toStartWith('/tmp/test-vault/');
+  });
 });
