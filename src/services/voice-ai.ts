@@ -5,8 +5,7 @@ import { getPrompt } from './prompts.js';
 import { logLLMExchange } from '../utils/transcript-log.js';
 import type { VoiceSession, ConversationTurn } from './voice-session.js';
 
-const CLAUDE_CODE_PATH =
-  process.env.CLAUDE_CODE_PATH || 'claude';
+const CLAUDE_CODE_PATH = process.env.CLAUDE_CODE_PATH || 'claude';
 
 const DraftResultSchema = z.object({
   action: z.literal('draft'),
@@ -73,7 +72,7 @@ export async function processVoiceInput(
     prompt,
     options: {
       model: config.ENRICHMENT_MODEL,
-      maxTurns: 1,
+      maxTurns: 3,
       pathToClaudeCodeExecutable: CLAUDE_CODE_PATH,
     },
   })) {

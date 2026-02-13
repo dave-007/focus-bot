@@ -9,8 +9,7 @@ import { extractUrls } from '../utils/url.js';
 import { getPrompt } from './prompts.js';
 import { logLLMExchange } from '../utils/transcript-log.js';
 
-const CLAUDE_CODE_PATH =
-  process.env.CLAUDE_CODE_PATH || 'claude';
+const CLAUDE_CODE_PATH = process.env.CLAUDE_CODE_PATH || 'claude';
 
 /**
  * Schema for note metadata extracted by Claude.
@@ -49,7 +48,7 @@ async function extractMetadata(message: string, urls: string[], urlMeta?: { titl
     prompt: assembledPrompt,
     options: {
       model: config.CAPTURE_MODEL,
-      maxTurns: 1,
+      maxTurns: 3,
       pathToClaudeCodeExecutable: CLAUDE_CODE_PATH,
     },
   })) {
@@ -65,9 +64,7 @@ async function extractMetadata(message: string, urls: string[], urlMeta?: { titl
         if (parsed.success) {
           return parsed.data;
         }
-        throw new Error(
-          `Metadata validation failed: ${parsed.error.message}`
-        );
+        throw new Error(`Metadata validation failed: ${parsed.error.message}`);
       }
       throw new Error(`Metadata extraction failed: ${msg.subtype}`);
     }

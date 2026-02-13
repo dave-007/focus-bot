@@ -17,8 +17,7 @@ export interface EnrichmentContext {
   api: Api;
 }
 
-const CLAUDE_CODE_PATH =
-  process.env.CLAUDE_CODE_PATH || 'claude';
+const CLAUDE_CODE_PATH = process.env.CLAUDE_CODE_PATH || 'claude';
 
 /**
  * Process a captured note for enrichment.
@@ -238,6 +237,7 @@ async function runSummary(prompt: string, label: string): Promise<string | null>
       prompt,
       options: {
         model: config.ENRICHMENT_MODEL,
+        maxTurns: 3,
         pathToClaudeCodeExecutable: CLAUDE_CODE_PATH,
       },
     })) {
