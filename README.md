@@ -56,9 +56,12 @@ Creates `Bookmarks/Video Title.md` with frontmatter, the original URL, an AI sum
 
 - **Instant capture** — Send a thought, get a note. No friction.
 - **AI metadata** — Claude generates titles, type-based tags, and inline `[[wiki-links]]`
+- **Voice notes** — Dictate notes via voice messages with Groq Whisper transcription and multi-turn editing
 - **URL enrichment** — YouTube transcripts and article text summarized by AI
 - **Telegraph publishing** — Readable summaries via Telegram's Instant View
 - **Bookmarks** — URL notes saved separately in `Bookmarks/` directory
+- **Custom prompts** — Override any AI prompt by editing Markdown files in your vault
+- **Debug logging** — Full transcript and LLM exchange logging for prompt iteration
 - **Access control** — User whitelist restricts who can use the bot
 
 ## Prerequisites
@@ -68,6 +71,7 @@ Creates `Bookmarks/Video Title.md` with frontmatter, the original URL, an AI sum
 - Telegram bot token from [@BotFather](https://t.me/BotFather)
 - Obsidian vault directory
 - For YouTube transcripts: [yt-dlp](https://github.com/yt-dlp/yt-dlp) installed
+- For voice transcription: [Groq](https://groq.com/) API key
 
 ## Setup
 
@@ -89,6 +93,9 @@ Edit `.env` with your values:
 - **`ANTHROPIC_API_KEY`** (optional) — Anthropic API key (uses Claude subscription if not set)
 - **`CAPTURE_MODEL`** (optional) — Claude model for capture (default: `haiku`)
 - **`ENRICHMENT_MODEL`** (optional) — Claude model for summaries (default: `haiku`)
+- **`GROQ_API_KEY`** (required) — Groq API key for voice transcription (Whisper)
+- **`PROMPTS_DIR`** (optional) — Subdirectory name for custom prompts (e.g., `Prompts`). When set, prompt files are seeded in `NOTES_DIR/<value>/Focus Bot/` and read on every request. Omit to use built-in defaults.
+- **`TRANSCRIPT_LOG`** (optional) — Path to debug log file (default: `/tmp/focus-bot-transcripts.log`)
 - **`CLAUDE_CODE_PATH`** (optional) — Path to `claude` CLI (default: resolved via PATH)
 
 To find your Telegram user ID, message [@userinfobot](https://t.me/userinfobot).
@@ -99,10 +106,16 @@ The bot expects and creates this structure:
 
 ```
 your-vault/
-  Bookmarks/         # Auto-created — URL-based notes go here
+  Bookmarks/                    # Auto-created — URL-based notes go here
     Article Title.md
     Video Title.md
-  Note Title.md      # Text notes go in vault root
+  Prompts/                      # Created when PROMPTS_DIR=Prompts is set
+    Focus Bot/
+      note-capture.md           # Prompt for text note metadata extraction
+      voice-assistant.md        # System prompt for voice drafting
+      video-summary.md          # Prompt for YouTube video summaries
+      article-summary.md        # Prompt for article summaries
+  Note Title.md                 # Text notes go in vault root
   Another Note.md
 ```
 
@@ -129,8 +142,35 @@ bun run start
 ### Message Types
 
 - **Text message** — Saved as note in vault root with AI metadata
+- **Voice message** — Transcribed via Groq Whisper, then processed as a draft note with multi-turn editing (send follow-up voice or text messages to refine, react with 👍 to save)
 - **URL** — Saved to `Bookmarks/`, summary published to Telegraph
 - **YouTube link** — Transcript fetched, summarized, published to Telegraph
+
+### Custom Prompts
+
+Set `PROMPTS_DIR=Prompts` in `.env` to enable user-configurable prompts. On startup, the bot seeds default prompt files as Markdown in your vault at `Prompts/Focus Bot/`. Edit any file to customize the AI behavior — changes take effect on the next message with no restart required.
+
+Available prompts:
+
+| File | Used for |
+|------|----------|
+| `note-capture.md` | Text note metadata extraction (title, tags, body) |
+| `voice-assistant.md` | Voice note drafting system prompt |
+| `video-summary.md` | YouTube video transcript summaries |
+| `article-summary.md` | Article/URL summaries |
+
+Prompts use `{{variable}}` placeholders (e.g., `{{message}}`, `{{transcript}}`) that are substituted at call time. See the seeded files for the full template syntax.
+
+### Debug Logging
+
+All voice transcriptions and LLM prompt/response exchanges are logged to a plain text file for debugging and prompt iteration:
+
+```bash
+# View live log
+tail -f /tmp/focus-bot-transcripts.log
+```
+
+Set `TRANSCRIPT_LOG` in `.env` to change the log path. Each entry includes a timestamp, the full prompt sent to Claude, and the response received.
 
 ## Production Deployment
 
@@ -185,6 +225,8 @@ Telegram → Grammy Bot → Auth Middleware → Message Handler
 3. `captureNote()` extracts metadata (title, tags, body) via Claude, writes `.md` file (fast path)
 4. `processNote()` runs async: fetches content, generates AI summary, publishes to Telegraph
 5. User gets 👍 immediately, then a Telegraph link reply, then 💯 when done
+
+All AI prompts are centralized in the prompts service (`src/services/prompts.ts`). When `PROMPTS_DIR` is configured, prompts are read from user-editable Markdown files in the vault at runtime, allowing real-time customization without restarting the bot.
 
 ## Note Format
 
@@ -254,6 +296,7 @@ Subject matter connections are handled entirely by `[[wiki-links]]` in the note 
 - [Zod](https://zod.dev/) — Config validation and response parsing
 - [telegra.ph](https://www.npmjs.com/package/telegra.ph) — Telegraph page publishing
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) — YouTube transcript fetching
+- [Groq](https://groq.com/) — Voice transcription (Whisper large-v3-turbo)
 
 ## License
 

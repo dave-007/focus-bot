@@ -50,10 +50,13 @@ mock.module('../src/config.js', () => ({
     ENRICHMENT_MODEL: 'haiku',
     ALLOWED_USER_IDS: [111, 222],
     ANTHROPIC_API_KEY: undefined,
+    TRANSCRIPT_LOG: '/tmp/test-transcripts.log',
+    PROMPTS_DIR: undefined,
   },
   loadCategories: () => ['Captures', 'Ideas', 'Clippings'],
   BOOKMARKS_DIR: '/tmp/test-vault/Bookmarks',
   CATEGORIES_DIR: '/tmp/test-vault/Categories',
+  PROMPTS_DIR: null,
 }));
 
 // ---------------------------------------------------------------------------
@@ -70,6 +73,7 @@ const fsExports = {
   writeFileSync: (...args: any[]) => {
     state.fs.writeFileSyncCalls.push(args);
   },
+  appendFileSync: () => {},
   readFileSync: (filePath: string, _encoding?: string) =>
     state.fs.readFileContent[filePath] ?? '',
   existsSync: (filePath: string) =>

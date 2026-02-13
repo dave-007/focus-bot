@@ -2,7 +2,7 @@
 
 ## Overview
 
-Focus Bot delivers a single-purpose Telegram-to-Obsidian capture workflow: send a message, get an AI-organized note. Organization follows Steph Ango's vault patterns with categories as wiki-links and inline `[[wiki-links]]` in note body.
+Focus Bot delivers a single-purpose Telegram-to-Obsidian capture workflow: send a message (text or voice), get an AI-organized note. Organization uses type-based tags and inline `[[wiki-links]]` in the note body.
 
 ## Milestone 1: MVP (Phases 1-3)
 
@@ -13,7 +13,8 @@ Focus Bot delivers a single-purpose Telegram-to-Obsidian capture workflow: send 
 ## Milestone 2: Enrichment
 
 - [x] **Phase 4: URL/Bookmark Capture** - URL detection, AI summaries, Telegraph publishing, Bookmarks directory
-- [ ] **Phase 5: TBD** - Future enrichment features based on usage
+- [x] **Phase 5: Tags Refactor** - Replace categories+topics with type-based tags (plain strings, always plural)
+- [x] **Phase 6: Voice Notes** - Voice transcription via Groq Whisper, multi-turn drafting, reaction-based save
 
 ## Phase Details
 
@@ -58,6 +59,26 @@ Additional work beyond plans:
   7. Reaction feedback: 👍 on capture, 💯 on enrichment complete
   8. Enrichment failures never crash bot or block user
 
+### Phase 5: Tags Refactor (Complete - 2026-02-07)
+**Goal**: Replace categories+topics with type-based tags
+**Success Criteria**:
+  1. Tags are plain strings (not wiki-links), always plural
+  2. `captures` tag code-enforced
+  3. Categories/ directory dependency removed
+  4. Wiki-links in body unchanged
+
+### Phase 6: Voice Notes (Complete - 2026-02-11)
+**Goal**: Voice message capture with multi-turn drafting and reaction-based save
+**Success Criteria**:
+  1. Voice messages transcribed via Groq Whisper (large-v3-turbo)
+  2. Transcription processed by Claude into title, tags, body
+  3. Draft displayed as formatted Telegram message (bold title, italic tags)
+  4. Follow-up voice/text messages refine draft in-place
+  5. 👍 reaction on draft triggers save to vault
+  6. Voice/text "save" and "cancel" commands work
+  7. Saved notes have `source: telegram-voice`
+  8. `GROQ_API_KEY` required in config
+
 ## Progress
 
 | Phase | Status | Completed |
@@ -66,3 +87,5 @@ Additional work beyond plans:
 | 2. Core Capture | Complete | 2026-02-05 |
 | 3. Vault Integration | Complete | 2026-02-06 |
 | 4. URL/Bookmark Capture | Complete | 2026-02-06 |
+| 5. Tags Refactor | Complete | 2026-02-07 |
+| 6. Voice Notes | Complete | 2026-02-11 |

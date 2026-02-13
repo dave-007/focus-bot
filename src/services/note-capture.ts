@@ -2,13 +2,14 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import { z } from 'zod';
-import sanitize from 'sanitize-filename';
 import { config, BOOKMARKS_DIR } from '../config.js';
 import { fetchPageMetadata } from '../utils/html-metadata.js';
+import { resolveFilePath } from '../utils/filename.js';
 import { extractUrls } from '../utils/url.js';
+import { getPrompt } from './prompts.js';
+import { logLLMExchange } from '../utils/transcript-log.js';
 
-const CLAUDE_CODE_PATH =
-  process.env.CLAUDE_CODE_PATH || 'claude';
+const CLAUDE_CODE_PATH = process.env.CLAUDE_CODE_PATH || 'claude';
 
 /**
  * Schema for note metadata extracted by Claude.
@@ -41,26 +42,19 @@ async function extractMetadata(message: string, urls: string[], urlMeta?: { titl
     urlContext = '\n\n' + metaLines.join('\n');
   }
 
+  const assembledPrompt = getPrompt('note-capture', { message, urlContext });
+
   for await (const msg of query({
-    prompt: `Analyze this message and generate metadata for an Obsidian note.
-
-Message:
-${message}${urlContext}
-
-Respond with ONLY a JSON object (no markdown, no explanation) in this exact format:
-{"title": "A concise descriptive title", "tags": ["quotes"], "body": "The message with [[wiki-links]] inserted around key concepts."}
-
-Requirements:
-- title: 1-100 characters, concise and descriptive
-- tags: 1-8 tags describing the TYPE of capture (not the topic). Always plural. Examples: books, movies, quotes, ideas, articles, links, recipes, poems, songs, tools. Detect implicit type signals (e.g. attribution line → quotes, URL → links or articles). Honor any explicit tags the user includes in their message. Do NOT use tags for subject matter — wiki-links in the body handle that. Do NOT include "captures" — it is added automatically.
-- body: Rewrite the original message inserting [[wiki-links]] around key concepts, important nouns, and proper names. Preserve the original meaning and wording exactly -- only add [[ and ]] around terms worth linking. Link both well-known concepts and ideas worth exploring further. Only link the FIRST occurrence of each term — do not repeat [[wiki-links]] for the same concept. NEVER insert [[wiki-links]] inside URLs -- keep all URLs exactly as they appear in the original message.`,
+    prompt: assembledPrompt,
     options: {
       model: config.CAPTURE_MODEL,
-      maxTurns: 1,
+      maxTurns: 3,
       pathToClaudeCodeExecutable: CLAUDE_CODE_PATH,
     },
   })) {
     if (msg.type === 'result') {
+      const response = msg.subtype === 'success' ? msg.result : null;
+      logLLMExchange('NOTE CAPTURE', assembledPrompt, response);
       if (msg.subtype === 'success' && msg.result) {
         const jsonMatch = msg.result.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
@@ -70,9 +64,7 @@ Requirements:
         if (parsed.success) {
           return parsed.data;
         }
-        throw new Error(
-          `Metadata validation failed: ${parsed.error.message}`
-        );
+        throw new Error(`Metadata validation failed: ${parsed.error.message}`);
       }
       throw new Error(`Metadata extraction failed: ${msg.subtype}`);
     }
@@ -118,18 +110,6 @@ ${metadata.body}
 }
 
 /**
- * Generate a safe filename from a title.
- * Preserves spaces for Obsidian compatibility.
- */
-function generateFilename(title: string): string {
-  const sanitized = sanitize(title, { replacement: '-' });
-  if (!sanitized) {
-    return `note-${Date.now()}.md`;
-  }
-  return `${sanitized}.md`;
-}
-
-/**
  * Capture a message as a note: extract metadata, generate content, write file.
  */
 export async function captureNote(
@@ -142,10 +122,9 @@ export async function captureNote(
   const urlMeta = primaryUrl ? await fetchPageMetadata(primaryUrl) : undefined;
 
   const metadata = await extractMetadata(message, urls, urlMeta);
-  const filename = generateFilename(metadata.title);
   const content = generateNoteContent(metadata, primaryUrl);
   const targetDir = urls.length > 0 ? BOOKMARKS_DIR : config.NOTES_DIR;
-  const filePath = path.join(targetDir, filename);
+  const filePath = resolveFilePath(metadata.title, targetDir);
   fs.writeFileSync(filePath, content, 'utf-8');
 
   return { title: metadata.title, filePath, urls };

@@ -1,10 +1,25 @@
 import { Context } from 'grammy';
 import { captureNote } from '../../services/note-capture.js';
 import { processNote } from '../../services/note-enrichment.js';
+import { hasSession } from '../../services/voice-session.js';
+import { processVoiceSessionInput } from './voice.js';
 
 export async function handleTextMessage(ctx: Context): Promise<void> {
   const text = ctx.message?.text;
-  if (!text || !ctx.chat) return;
+  const userId = ctx.from?.id;
+  if (!text || !ctx.chat || !userId) return;
+
+  // If user has an active voice drafting session, route text there
+  if (hasSession(userId)) {
+    try {
+      await ctx.api.sendChatAction(ctx.chat.id, 'typing');
+      await processVoiceSessionInput(ctx, userId, ctx.chat.id, text);
+    } catch (error) {
+      console.error('[voice] Text input to session failed:', error);
+      await ctx.reply('Failed to process edit. Please try again.');
+    }
+    return;
+  }
 
   try {
     await ctx.api.sendChatAction(ctx.chat.id, 'typing');

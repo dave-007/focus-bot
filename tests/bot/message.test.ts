@@ -35,6 +35,7 @@ function createMockContext(text?: string) {
   return {
     message: text !== undefined ? { text, message_id: 42 } : undefined,
     chat: text !== undefined ? { id: 12345 } : undefined,
+    from: text !== undefined ? { id: 111 } : undefined,
     api: {
       sendChatAction: mock(() => Promise.resolve(true)),
       setMessageReaction: mock(() => Promise.resolve(true)),
