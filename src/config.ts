@@ -49,6 +49,15 @@ const envSchema = z.object({
   GROQ_API_KEY: z
     .string()
     .min(1, 'GROQ_API_KEY is required for voice transcription'),
+
+  TRANSCRIPT_LOG: z
+    .string()
+    .default('/tmp/focus-bot-transcripts.log'),
+
+  PROMPTS_DIR: z
+    .string()
+    .min(1)
+    .optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -68,3 +77,11 @@ export type Config = typeof config;
  * Derived path: Bookmarks subdirectory for URL-based notes.
  */
 export const BOOKMARKS_DIR = path.join(config.NOTES_DIR, 'Bookmarks');
+
+/**
+ * Derived path: Prompts directory for user-configurable prompt files.
+ * null when PROMPTS_DIR is not set (use built-in defaults).
+ */
+export const PROMPTS_DIR: string | null = config.PROMPTS_DIR
+  ? path.join(config.NOTES_DIR, config.PROMPTS_DIR)
+  : null;

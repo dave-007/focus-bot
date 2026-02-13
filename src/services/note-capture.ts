@@ -6,6 +6,8 @@ import { config, BOOKMARKS_DIR } from '../config.js';
 import { fetchPageMetadata } from '../utils/html-metadata.js';
 import { resolveFilePath } from '../utils/filename.js';
 import { extractUrls } from '../utils/url.js';
+import { getPrompt } from './prompts.js';
+import { logLLMExchange } from '../utils/transcript-log.js';
 
 const CLAUDE_CODE_PATH =
   process.env.CLAUDE_CODE_PATH || 'claude';
@@ -41,19 +43,10 @@ async function extractMetadata(message: string, urls: string[], urlMeta?: { titl
     urlContext = '\n\n' + metaLines.join('\n');
   }
 
+  const assembledPrompt = getPrompt('note-capture', { message, urlContext });
+
   for await (const msg of query({
-    prompt: `Analyze this message and generate metadata for an Obsidian note.
-
-Message:
-${message}${urlContext}
-
-Respond with ONLY a JSON object (no markdown, no explanation) in this exact format:
-{"title": "A concise descriptive title", "tags": ["quotes"], "body": "The message with [[wiki-links]] inserted around key concepts."}
-
-Requirements:
-- title: 1-100 characters, concise and descriptive
-- tags: 1-8 tags describing the TYPE of capture (not the topic). Always plural. Examples: books, movies, quotes, ideas, articles, links, recipes, poems, songs, tools. Detect implicit type signals (e.g. attribution line → quotes, URL → links or articles). Honor any explicit tags the user includes in their message. Do NOT use tags for subject matter — wiki-links in the body handle that. Do NOT include "captures" — it is added automatically.
-- body: Rewrite the original message inserting [[wiki-links]] around key concepts, important nouns, and proper names. Preserve the original meaning and wording exactly -- only add [[ and ]] around terms worth linking. Link both well-known concepts and ideas worth exploring further. Only link the FIRST occurrence of each term — do not repeat [[wiki-links]] for the same concept. NEVER insert [[wiki-links]] inside URLs -- keep all URLs exactly as they appear in the original message.`,
+    prompt: assembledPrompt,
     options: {
       model: config.CAPTURE_MODEL,
       maxTurns: 1,
@@ -61,6 +54,8 @@ Requirements:
     },
   })) {
     if (msg.type === 'result') {
+      const response = msg.subtype === 'success' ? msg.result : null;
+      logLLMExchange('NOTE CAPTURE', assembledPrompt, response);
       if (msg.subtype === 'success' && msg.result) {
         const jsonMatch = msg.result.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {

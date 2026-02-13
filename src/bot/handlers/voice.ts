@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
 import type { Context } from 'grammy';
 import { config } from '../../config.js';
+import { logTranscript } from '../../utils/transcript-log.js';
 import { resolveFilePath } from '../../utils/filename.js';
 import { downloadVoiceFile, transcribeVoice } from '../../services/voice-transcription.js';
 import { processVoiceInput, type VoiceAIResult } from '../../services/voice-ai.js';
@@ -207,6 +208,7 @@ export async function handleVoiceMessage(ctx: Context): Promise<void> {
       return;
     }
 
+    logTranscript(transcription);
     await processVoiceSessionInput(ctx, userId, chatId, transcription);
   } catch (error) {
     console.error('[voice] Handler error:', error);

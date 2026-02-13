@@ -8,6 +8,8 @@ import { fetchArticleText } from '../utils/html-text.js';
 import { appendToNoteBody, parseNote, assembleNote } from '../utils/note-parser.js';
 import { isYouTubeUrl, fetchTranscript } from '../utils/youtube.js';
 import { createTelegraphPage } from '../utils/telegraph.js';
+import { getPrompt } from './prompts.js';
+import { logLLMExchange } from '../utils/transcript-log.js';
 
 export interface EnrichmentContext {
   chatId: number;
@@ -202,18 +204,7 @@ async function summarizeTranscript(
   const titleContext = title ? `Video title: "${title}"\n\n` : '';
 
   return runSummary(
-    `${titleContext}Provide a detailed, in-depth summary of this video transcript. This summary is the primary representation of this video's content, so be thorough.
-
-Structure your response as:
-- A 2-3 sentence overview of the main topic and thesis
-- Key points, arguments, and ideas discussed (as bullet points — be comprehensive)
-- Notable quotes, statistics, or specific claims worth remembering
-- Conclusions or takeaways
-
-Write in plain text. Use bullet points (- ) for lists. Do not use markdown headers or bold.
-
-Transcript:
-${truncated}`,
+    getPrompt('video-summary', { titleContext, transcript: truncated }),
     'video summary'
   );
 }
@@ -233,17 +224,7 @@ async function summarizeArticle(
   const titleContext = title ? `Article title: "${title}"\n\n` : '';
 
   return runSummary(
-    `${titleContext}Summarize this article in a clear, structured format.
-
-Structure your response as:
-- A 1-2 sentence overview of what the article is about
-- Key points and insights (as bullet points)
-- Notable data, quotes, or specific claims worth remembering
-
-Write in plain text. Use bullet points (- ) for lists. Do not use markdown headers or bold.
-
-Article text:
-${truncated}`,
+    getPrompt('article-summary', { titleContext, articleText: truncated }),
     'article summary'
   );
 }
@@ -261,6 +242,8 @@ async function runSummary(prompt: string, label: string): Promise<string | null>
       },
     })) {
       if (msg.type === 'result') {
+        const response = msg.subtype === 'success' ? msg.result : null;
+        logLLMExchange(`ENRICHMENT: ${label}`, prompt, response);
         if (msg.subtype === 'success' && msg.result) {
           return msg.result.trim();
         }
