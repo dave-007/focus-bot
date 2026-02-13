@@ -5,13 +5,13 @@
 See: .planning/PROJECT.md (updated 2026-02-06)
 
 **Core value:** Message -> Note. No friction, no decisions. Just send a thought and it's captured with intelligent metadata.
-**Current focus:** Tags refactor complete. Categories+topics replaced with type-based tags.
+**Current focus:** Voice note capture shipped. All planned features delivered.
 
 ## Current Position
 
-Phase: 5 of 5 complete (Tags Refactor)
+Phase: 6 of 6 complete (Voice Notes)
 Status: All planned features delivered
-Last activity: 2026-02-07 - Tags refactor (replaced categories+topics with type-based tags)
+Last activity: 2026-02-11 - Voice note capture with multi-turn drafting (PR #1)
 
 Progress: [██████████] 100%
 
@@ -22,6 +22,16 @@ Progress: [██████████] 100%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [Phase 6]: Voice transcription via Groq Whisper (large-v3-turbo, OGG Opus native)
+- [Phase 6]: Multi-turn drafting with in-place message editing
+- [Phase 6]: Session management (one active draft per user, in-memory)
+- [Phase 6]: Text messages route to voice session when draft is active
+- [Phase 6]: Reaction-based save (👍 on draft message)
+- [Phase 6]: Formatted draft preview (bold title, italic tags, Markdown parse mode)
+- [Phase 6]: Zero-width space prevents Telegram auto-linking .md extension
+- [Phase 6]: Save confirmation keeps full note visible (✅ prepended to title)
+- [Phase 6]: Voice notes saved with `source: telegram-voice`
+- [Phase 6]: Runner configured with `allowed_updates` for `message_reaction` support
 - [Phase 5]: Replaced categories+topics with type-based tags (plain strings, always plural)
 - [Phase 5]: `captures` tag code-enforced (always prepended, not in AI response)
 - [Phase 5]: Removed Categories/ directory dependency (loadCategories, CATEGORIES_DIR)
@@ -33,8 +43,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Consider voice note support (transcribe audio + capture pipeline)
 - Consider review commands (/inbox, /review)
+- Consider image capture (AI-generated descriptions)
 
 ### Blockers/Concerns
 
@@ -42,8 +52,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-07
-Stopped at: Phase 5 (Tags Refactor) complete
+Last session: 2026-02-11
+Stopped at: Phase 6 (Voice Notes) complete — PR #1 created
 Resume file: .planning/WHATSNEXT.md
 
 ## What's Been Delivered
@@ -90,6 +100,21 @@ Resume file: .planning/WHATSNEXT.md
 - `captures` tag code-enforced (always prepended)
 - Updated Claude prompt for tag philosophy (type-based, not topical)
 - Updated all test files, documentation, and planning docs
+
+### Phase 6: Voice Notes (Complete - 2026-02-11)
+- Voice transcription via Groq Whisper API (large-v3-turbo)
+- Multi-turn drafting: send follow-up voice/text to refine draft in-place
+- Session management: one draft per user, conversation history preserved
+- Text messages route to voice session when draft is active
+- Save via 👍 reaction, voice command ("save"), or text command
+- Cancel via voice/text command ("cancel", "discard")
+- Formatted draft preview with bold title, italic tags (Markdown parse mode)
+- Zero-width space prevents Telegram auto-linking .md
+- Save confirmation keeps full note visible with ✅ prefix
+- Auth middleware handles non-message updates (reactions) gracefully
+- Runner subscribes to `message_reaction` updates
+- `GROQ_API_KEY` added as required config
+- README updated with voice features, Groq prerequisite, config docs
 
 ### Research
 - 2026-02-05: Second brain methodologies, feature prioritization, competitive landscape

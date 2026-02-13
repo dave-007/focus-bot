@@ -12,12 +12,21 @@ A focused Telegram bot that captures quick thoughts and saves them as markdown n
 
 ## How It Works
 
+**Text messages:**
 1. User sends a text message to the Telegram bot
 2. Grammy receives the update, auth middleware checks user whitelist
 3. Claude (haiku) analyzes content, returns JSON with title, tags, and wiki-linked body
 4. Bot writes markdown file directly to NOTES_DIR via `fs.writeFileSync`
-5. Bot confirms: "Saved: [Note Title]"
-6. Async enrichment fires (currently a stub for future URL metadata fetching)
+5. Bot confirms with 👍 reaction
+6. Async enrichment fires for URLs (AI summary → Telegraph → reply with link → 💯)
+
+**Voice messages:**
+1. User sends a voice message to the bot
+2. Audio downloaded from Telegram, transcribed via Groq Whisper (large-v3-turbo)
+3. Claude processes transcription into a draft (title, tags, wiki-linked body)
+4. Bot sends formatted draft preview (bold title, italic tags)
+5. User refines with follow-up voice/text messages (multi-turn editing)
+6. User saves (👍 reaction or "save" command) or cancels
 
 ## Technical Approach
 
