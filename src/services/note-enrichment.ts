@@ -237,7 +237,8 @@ async function runSummary(prompt: string, label: string): Promise<string | null>
       prompt,
       options: {
         model: config.ENRICHMENT_MODEL,
-        maxTurns: 3,
+        maxTurns: 2,
+        tools: [],
         pathToClaudeCodeExecutable: CLAUDE_CODE_PATH,
       },
     })) {

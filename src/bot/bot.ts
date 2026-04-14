@@ -5,6 +5,7 @@ import { authMiddleware } from './middleware/auth.js';
 import { handleStart } from './handlers/command.js';
 import { handleTextMessage } from './handlers/message.js';
 import { handleVoiceMessage, handleReaction } from './handlers/voice.js';
+import { handleDocumentMessage, handlePhotoMessage } from './handlers/document.js';
 import { handleStatus, handleLogs, handleHealth, handleRestart } from './handlers/admin.js';
 
 export function createBot(): Bot {
@@ -26,6 +27,8 @@ export function createBot(): Bot {
   // Message handlers
   bot.on('message:text', handleTextMessage);
   bot.on('message:voice', handleVoiceMessage);
+  bot.on('message:document', handleDocumentMessage);
+  bot.on('message:photo', handlePhotoMessage);
   bot.on('message_reaction', handleReaction);
 
   // Error handler

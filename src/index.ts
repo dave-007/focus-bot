@@ -4,6 +4,7 @@ import { createBot } from './bot/bot.js';
 import { config, BOOKMARKS_DIR } from './config.js';
 import { helpMessage } from './bot/handlers/command.js';
 import { seedPrompts } from './services/prompts.js';
+import { ensureFilesDir } from './bot/handlers/document.js';
 
 async function main(): Promise<void> {
   // Ensure Bookmarks directory exists for URL-based notes
@@ -11,6 +12,9 @@ async function main(): Promise<void> {
     fs.mkdirSync(BOOKMARKS_DIR);
     console.log(`Created Bookmarks directory: ${BOOKMARKS_DIR}`);
   }
+
+  // Ensure Files directory exists for document attachments
+  ensureFilesDir();
 
   // Seed user-configurable prompt files (no-op if PROMPTS_DIR is not set)
   seedPrompts();

@@ -14,13 +14,21 @@ import {
   type VoiceSession,
 } from '../../services/voice-session.js';
 
+const TELEGRAM_MESSAGE_LIMIT = 4096;
+
 /**
  * Format the draft message as an Obsidian note preview.
+ * Truncates body if the formatted message would exceed Telegram's 4096 char limit.
  */
 function formatDraftMessage(title: string, tags: string[], body: string): string {
   const allTags = tags.includes('captures') ? tags : ['captures', ...tags];
   const tagsBlock = allTags.map((t) => `  - _${t}_`).join('\n');
-  return `*${title}*\u200B.md\n\n---\nTags:\n${tagsBlock}\n---\n${body}`;
+  const header = `*${title}*\u200B.md\n\n---\nTags:\n${tagsBlock}\n---\n`;
+  const maxBody = TELEGRAM_MESSAGE_LIMIT - header.length;
+  const truncatedBody = body.length > maxBody
+    ? body.slice(0, maxBody - 30) + '\n\n_(truncated for preview)_'
+    : body;
+  return header + truncatedBody;
 }
 
 /**

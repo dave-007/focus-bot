@@ -80,6 +80,7 @@ const fsExports = {
     typeof state.fs.existsSyncResult === 'function'
       ? state.fs.existsSyncResult(filePath)
       : state.fs.existsSyncResult,
+  mkdirSync: () => {},
   mkdtempSync: (_prefix: string) => '/tmp/yt-mock-test',
   rmSync: () => {},
   statSync: () => ({ isDirectory: () => true }),

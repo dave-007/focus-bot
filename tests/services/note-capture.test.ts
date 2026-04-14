@@ -127,6 +127,27 @@ describe('captureNote', () => {
     expect(match).not.toBeNull();
   });
 
+  test('throws on error_max_turns from SDK', async () => {
+    mocks.query.fn = () => ({
+      async *[Symbol.asyncIterator]() {
+        yield { type: 'result', subtype: 'error_max_turns', result: null };
+      },
+    });
+
+    await expect(captureNote('Test thought')).rejects.toThrow('Metadata extraction failed: error_max_turns');
+  });
+
+  test('throws on response with no JSON', async () => {
+    setQueryResponse({ notJson: true } as any);
+    mocks.query.fn = () => ({
+      async *[Symbol.asyncIterator]() {
+        yield { type: 'result', subtype: 'success', result: 'No JSON here at all' };
+      },
+    });
+
+    await expect(captureNote('Test thought')).rejects.toThrow('No JSON found in response');
+  });
+
   test('appends timestamp to filename when file already exists', async () => {
     // Simulate that the first filename attempt already exists on disk
     mocks.fs.existsSyncResult = (p: string) => {

@@ -48,7 +48,8 @@ async function extractMetadata(message: string, urls: string[], urlMeta?: { titl
     prompt: assembledPrompt,
     options: {
       model: config.CAPTURE_MODEL,
-      maxTurns: 3,
+      maxTurns: 2,
+      tools: [],
       pathToClaudeCodeExecutable: CLAUDE_CODE_PATH,
     },
   })) {

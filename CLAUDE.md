@@ -73,9 +73,11 @@ Sessions are in-memory (one per user, lost on restart).
 - `src/bot/handlers/voice.ts` - Voice message handler, draft formatting, save/cancel logic, reaction-based save
 - `src/services/note-capture.ts` - Core logic: metadata extraction (title, tags, body) + direct file writing
 - `src/services/note-enrichment.ts` - Async URL enrichment: AI summaries, Telegraph publishing, frontmatter updates
-- `src/services/voice-ai.ts` - Claude integration for voice draft generation (system prompt, Zod validation, multi-turn context)
+- `src/services/voice-ai.ts` - Claude integration for voice draft generation (system prompt, Zod validation, multi-turn context, retry + fallback)
 - `src/services/voice-session.ts` - In-memory session store (per-user draft state, conversation history)
 - `src/services/voice-transcription.ts` - Telegram file download + Groq Whisper API transcription
+- `src/services/prompts.ts` - Template system: built-in defaults with optional user-configurable overrides from `PROMPTS_DIR`
+- `src/bot/handlers/admin.ts` - Telegram commands: `/health`, `/status`, `/logs`, `/restart`
 - `src/utils/telegraph.ts` - Telegraph (telegra.ph) client: account management, content conversion, page creation
 
 ### Claude Agent SDK Usage Pattern
@@ -89,6 +91,17 @@ The bot uses `query()` from `@anthropic-ai/claude-agent-sdk` for a single call:
 - No tools allowed (pure text response)
 
 File writing is done directly via `fs.writeFileSync` — no Claude SDK involved.
+
+**Voice AI** (`ENRICHMENT_MODEL`, up to 3 turns):
+- Retry + fallback: if JSON extraction fails, retries once with explicit JSON instruction, then falls back to raw draft from user input
+- Same `query()` pattern as metadata extraction
+
+### Prompt System
+
+AI prompts live in `src/services/prompts.ts` with a template variable system (`{{variable}}`):
+- **Built-in defaults**: `note-capture`, `voice-assistant`, `video-summary`, `article-summary`
+- **User overrides**: When `PROMPTS_DIR` is set, reads markdown files from `NOTES_DIR/<PROMPTS_DIR>/Focus Bot/` at runtime
+- `seedPrompts()` creates missing prompt files on startup (no-op if `PROMPTS_DIR` unset)
 
 ### Async Enrichment Architecture
 
@@ -120,6 +133,10 @@ Required environment variables (validated at startup):
 - **`NOTES_DIR`** — Absolute path to Obsidian vault root
 - **`ANTHROPIC_API_KEY`** — Optional (defaults to subscription model)
 - **`GROQ_API_KEY`** — Required for voice transcription (Whisper)
+- **`CAPTURE_MODEL`** — Claude model for note capture (default: `haiku`)
+- **`ENRICHMENT_MODEL`** — Claude model for enrichment + voice AI (default: `haiku`)
+- **`PROMPTS_DIR`** — Optional subdirectory name for user-configurable prompts
+- **`TRANSCRIPT_LOG`** — Optional path for voice transcript debug log (default: `/tmp/focus-bot-transcripts.log`)
 
 Derived values:
 - **`BOOKMARKS_DIR`** — `NOTES_DIR/Bookmarks/` (auto-created at startup)
@@ -148,6 +165,25 @@ One way to prove or overcome the subjectiveness of [[consciousness]] or [[qualia
 - **Body**: Original message with inline `[[wiki-links]]` for key concepts
 - **telegraph**: Telegraph URL for readable summary (added async by enrichment, URL notes only)
 - **Location**: `NOTES_DIR` root (text notes) or `NOTES_DIR/Bookmarks/` (URL notes)
+
+## Testing
+
+Uses `bun:test` (built-in Bun test runner). Test config in `bunfig.toml`.
+
+- **Preload**: `tests/setup.ts` — global mocks for config, Claude Agent SDK, `node:fs`, Telegraph, `node:child_process`
+- **Mock control**: Tests modify `(globalThis as any).__testMocks` in `beforeEach` to configure mock behavior per test
+- **Structure**: `tests/<layer>/<name>.test.ts` mirrors `src/<layer>/<name>.ts`
+- **Run**: `bun test` (88 tests across 12 files)
+
+## Bot Commands
+
+| Command | Handler | Description |
+|---------|---------|-------------|
+| `/start` | `command.ts` | Show help message |
+| `/health` | `admin.ts` | Uptime and memory usage |
+| `/status` | `admin.ts` | systemd service status |
+| `/logs` | `admin.ts` | Recent journal entries |
+| `/restart` | `admin.ts` | Restart the service |
 
 ## Planning Documentation
 
