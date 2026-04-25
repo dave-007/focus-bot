@@ -7,6 +7,7 @@ import { fetchPageMetadata, PageMetadata } from '../utils/html-metadata.js';
 import { fetchArticleText } from '../utils/html-text.js';
 import { appendToNoteBody, parseNote, assembleNote } from '../utils/note-parser.js';
 import { isYouTubeUrl, fetchTranscript } from '../utils/youtube.js';
+import { isVideoDomain, extractVideoTranscript } from '../utils/video-extract.js';
 import { createTelegraphPage } from '../utils/telegraph.js';
 import { getPrompt } from './prompts.js';
 import { logLLMExchange } from '../utils/transcript-log.js';
@@ -45,6 +46,9 @@ export async function processNote(filePath: string, urls: string[], tg?: Enrichm
     try {
       if (isYouTubeUrl(url)) {
         const section = await enrichYouTube(url);
+        if (section) sections.push(section);
+      } else if (isVideoDomain(url)) {
+        const section = await enrichVideoUrl(url);
         if (section) sections.push(section);
       } else {
         const section = await enrichGenericUrl(url);
@@ -148,6 +152,53 @@ async function enrichYouTube(url: string): Promise<string | null> {
     }
   } else {
     console.log(`[enrichment] No transcript available for ${url}`);
+  }
+
+  return parts.length > 0 ? parts.join('\n') : null;
+}
+
+/**
+ * Enrich a video URL (X/Twitter, TikTok, Instagram, etc.):
+ * download audio via yt-dlp, transcribe with Whisper, summarize with Claude.
+ */
+async function enrichVideoUrl(url: string): Promise<string | null> {
+  const metadata = await fetchPageMetadata(url);
+  const parts: string[] = [];
+
+  if (metadata.title) {
+    const siteName = metadata.siteName || extractDomain(url);
+    parts.push(`> **${metadata.title}**`);
+    if (metadata.description) parts.push(`> ${metadata.description}`);
+    parts.push(`> \u2014 ${siteName}`);
+  }
+
+  // Try to extract and transcribe audio from the video
+  const transcript = await extractVideoTranscript(url);
+  if (transcript) {
+    console.log(`[enrichment] Got video transcript (${transcript.length} chars), generating summary...`);
+    const summary = await summarizeTranscript(transcript, metadata.title);
+    if (summary) {
+      parts.push('');
+      parts.push('> [!summary] Summary');
+      for (const line of summary.split('\n')) {
+        parts.push(`> ${line}`);
+      }
+    }
+  } else {
+    console.log(`[enrichment] No transcript available for video ${url}`);
+    // Fall back to article text extraction (some platforms return usable HTML)
+    const articleText = await fetchArticleText(url);
+    if (articleText && articleText.length >= 200) {
+      console.log(`[enrichment] Falling back to article text (${articleText.length} chars)`);
+      const summary = await summarizeArticle(articleText, metadata.title);
+      if (summary) {
+        parts.push('');
+        parts.push('> [!summary] Summary');
+        for (const line of summary.split('\n')) {
+          parts.push(`> ${line}`);
+        }
+      }
+    }
   }
 
   return parts.length > 0 ? parts.join('\n') : null;

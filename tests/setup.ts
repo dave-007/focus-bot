@@ -97,6 +97,23 @@ mock.module('../src/utils/telegraph.js', () => ({
 }));
 
 // ---------------------------------------------------------------------------
+// Video extract — prevents yt-dlp + Whisper from running in tests
+// ---------------------------------------------------------------------------
+mock.module('../src/utils/video-extract.js', () => ({
+  isVideoDomain: (url: string) => {
+    try {
+      const hostname = new URL(url).hostname.replace(/^www\./, '');
+      return ['x.com', 'twitter.com', 'tiktok.com', 'instagram.com'].some(
+        (d) => hostname === d || hostname.endsWith(`.${d}`)
+      );
+    } catch {
+      return false;
+    }
+  },
+  extractVideoTranscript: async () => null,
+}));
+
+// ---------------------------------------------------------------------------
 // Child process — prevents yt-dlp from running in tests
 // ---------------------------------------------------------------------------
 mock.module('node:child_process', () => ({
