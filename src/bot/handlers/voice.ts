@@ -76,13 +76,19 @@ async function handleDraftResult(
   const session = getSession(userId);
 
   if (session) {
-    // Update existing draft message
-    await ctx.api.editMessageText(
-      chatId,
-      session.draftMessageId,
-      formatDraftMessage(result.title, result.tags, result.body),
-      { parse_mode: 'Markdown' }
-    );
+    // Update existing draft message (ignore "message not modified" errors)
+    try {
+      await ctx.api.editMessageText(
+        chatId,
+        session.draftMessageId,
+        formatDraftMessage(result.title, result.tags, result.body),
+        { parse_mode: 'Markdown' }
+      );
+    } catch (error: unknown) {
+      const isNotModified = error instanceof Error &&
+        error.message.includes('message is not modified');
+      if (!isNotModified) throw error;
+    }
     updateSession(userId, {
       draft: result.body,
       title: result.title,
@@ -132,12 +138,18 @@ async function handleSave(
   console.log(`[voice] Saved note: ${filePath}`);
 
   // Update draft message to show saved confirmation (keep full note visible)
-  await ctx.api.editMessageText(
-    chatId,
-    session.draftMessageId,
-    formatDraftMessage(`\u2705 ${session.title}`, session.tags, session.draft),
-    { parse_mode: 'Markdown' }
-  );
+  try {
+    await ctx.api.editMessageText(
+      chatId,
+      session.draftMessageId,
+      formatDraftMessage(`\u2705 ${session.title}`, session.tags, session.draft),
+      { parse_mode: 'Markdown' }
+    );
+  } catch (error: unknown) {
+    const isNotModified = error instanceof Error &&
+      error.message.includes('message is not modified');
+    if (!isNotModified) throw error;
+  }
 
   deleteSession(userId);
 }

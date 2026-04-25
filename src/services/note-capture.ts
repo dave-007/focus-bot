@@ -28,26 +28,20 @@ export interface CaptureResult {
   urls: string[];
 }
 
+const MODEL_CASCADE = [
+  'claude-sonnet-4-6',
+  'claude-haiku-4-5-20251001',
+  'claude-opus-4-6',
+] as const;
+
 /**
- * Extract title, tags, and wiki-linked body from a message using Claude.
+ * Try extracting metadata with a single model. Throws on any failure.
  */
-async function extractMetadata(message: string, urls: string[], urlMeta?: { title: string | null; description: string | null; siteName: string | null }): Promise<NoteMetadata> {
-  let urlContext = '';
-  if (urls.length > 0) {
-    const metaLines: string[] = [`This message contains URL(s): ${urls.join(', ')}`];
-    if (urlMeta?.title) metaLines.push(`Page title: "${urlMeta.title}"`);
-    if (urlMeta?.description) metaLines.push(`Page description: "${urlMeta.description}"`);
-    if (urlMeta?.siteName) metaLines.push(`Site: ${urlMeta.siteName}`);
-    metaLines.push('The message is sharing a link/bookmark. Consider tags like "links" or "articles". Use the page title/description to generate a descriptive note title.');
-    urlContext = '\n\n' + metaLines.join('\n');
-  }
-
-  const assembledPrompt = getPrompt('note-capture', { message, urlContext });
-
+async function tryExtractWithModel(model: string, assembledPrompt: string): Promise<NoteMetadata> {
   for await (const msg of query({
     prompt: assembledPrompt,
     options: {
-      model: config.CAPTURE_MODEL,
+      model,
       maxTurns: 2,
       tools: [],
       pathToClaudeCodeExecutable: CLAUDE_CODE_PATH,
@@ -72,6 +66,48 @@ async function extractMetadata(message: string, urls: string[], urlMeta?: { titl
   }
 
   throw new Error('No result from metadata extraction');
+}
+
+/**
+ * Generate raw metadata from the message text without any AI call.
+ */
+function generateRawMetadata(message: string): NoteMetadata {
+  const trimmed = message.trim();
+  const titleSource = trimmed.replace(/\n/g, ' ').slice(0, 60);
+  const lastSpace = titleSource.lastIndexOf(' ');
+  const title = lastSpace > 20 ? titleSource.slice(0, lastSpace) : titleSource;
+
+  return { title, tags: ['captures'], body: trimmed };
+}
+
+/**
+ * Extract title, tags, and wiki-linked body from a message using Claude.
+ * Tries sonnet → haiku → opus, then falls back to raw capture.
+ */
+async function extractMetadata(message: string, urls: string[], urlMeta?: { title: string | null; description: string | null; siteName: string | null }): Promise<NoteMetadata> {
+  let urlContext = '';
+  if (urls.length > 0) {
+    const metaLines: string[] = [`This message contains URL(s): ${urls.join(', ')}`];
+    if (urlMeta?.title) metaLines.push(`Page title: "${urlMeta.title}"`);
+    if (urlMeta?.description) metaLines.push(`Page description: "${urlMeta.description}"`);
+    if (urlMeta?.siteName) metaLines.push(`Site: ${urlMeta.siteName}`);
+    metaLines.push('The message is sharing a link/bookmark. Consider tags like "links" or "articles". Use the page title/description to generate a descriptive note title.');
+    urlContext = '\n\n' + metaLines.join('\n');
+  }
+
+  const assembledPrompt = getPrompt('note-capture', { message, urlContext });
+
+  for (const model of MODEL_CASCADE) {
+    try {
+      return await tryExtractWithModel(model, assembledPrompt);
+    } catch (error: unknown) {
+      const reason = error instanceof Error ? error.message : String(error);
+      console.log(`[capture] ${model} failed: ${reason}, trying next...`);
+    }
+  }
+
+  console.log(`[capture] All models failed, using raw capture for: ${message.slice(0, 50)}...`);
+  return generateRawMetadata(message);
 }
 
 /**

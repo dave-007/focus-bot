@@ -45,8 +45,18 @@ async function main(): Promise<void> {
     });
   }
 
+  // Write heartbeat file every 60s so a watchdog can detect staleness
+  const heartbeatPath = `${config.NOTES_DIR}/.focus-bot-heartbeat`;
+  const writeHeartbeat = () => {
+    fs.writeFileSync(heartbeatPath, new Date().toISOString(), 'utf-8');
+  };
+  writeHeartbeat();
+  const heartbeatInterval = setInterval(writeHeartbeat, 60_000);
+
   const shutdown = async (signal: string): Promise<void> => {
     console.log(`\nReceived ${signal}. Shutting down gracefully...`);
+    clearInterval(heartbeatInterval);
+    try { fs.unlinkSync(heartbeatPath); } catch {}
     await handle.stop();
     process.exit(0);
   };

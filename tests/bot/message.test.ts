@@ -79,12 +79,14 @@ describe('handleTextMessage', () => {
     expect(ctx.react).not.toHaveBeenCalled();
   });
 
-  test('replies with error message when capture fails', async () => {
+  test('falls back to raw capture when all models fail', async () => {
     setQueryError();
     const ctx = createMockContext('A failing message');
 
     await handleTextMessage(ctx);
 
-    expect(ctx.reply).toHaveBeenCalledWith('Failed to save note. Please try again.');
+    // Raw fallback saves the note instead of failing
+    expect(mocks.fs.writeFileSyncCalls.length).toBe(1);
+    expect(ctx.react).toHaveBeenCalledWith('👍');
   });
 });
