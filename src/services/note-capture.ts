@@ -28,6 +28,82 @@ export interface CaptureResult {
   urls: string[];
 }
 
+export interface ForwardInfo {
+  from: string | null;
+  author: string | null;
+  originalDate: string | null;
+}
+
+export interface CaptureOptions {
+  explicitTags?: string[];
+  statusOverride?: string;
+  typeTag?: string;
+  targetFolder?: string;
+  forwardInfo?: ForwardInfo;
+}
+
+export interface ParsedPrefixes {
+  explicitTags: string[];
+  statusOverride: string | null;
+  typeTag: string | null;
+  targetFolder: string | null;
+  cleanText: string;
+}
+
+/**
+ * Parse inline prefix tokens from a message.
+ * Tokens: #project/name, +tag, ^type, !status, >folder
+ * Tokens inside URLs are skipped.
+ */
+export function parsePrefixes(text: string): ParsedPrefixes {
+  const explicitTags: string[] = [];
+  let statusOverride: string | null = null;
+  let typeTag: string | null = null;
+  let targetFolder: string | null = null;
+
+  // Split into tokens preserving whitespace structure
+  const tokens = text.split(/(\s+)/);
+  const cleanTokens: string[] = [];
+  let insideUrl = false;
+
+  for (const token of tokens) {
+    // Whitespace tokens pass through
+    if (/^\s+$/.test(token)) {
+      cleanTokens.push(token);
+      continue;
+    }
+
+    // Detect if we're inside a URL
+    if (/^https?:\/\//i.test(token)) {
+      insideUrl = true;
+    }
+    if (insideUrl) {
+      cleanTokens.push(token);
+      if (/\s/.test(token)) insideUrl = false;
+      continue;
+    }
+
+    // Parse prefix tokens
+    if (/^#project\/\S+$/i.test(token)) {
+      const name = token.slice('#project/'.length);
+      targetFolder = `Projects/${name}`;
+    } else if (/^\+\w+$/.test(token)) {
+      explicitTags.push(token.slice(1));
+    } else if (/^\^\w+$/.test(token)) {
+      typeTag = token.slice(1);
+    } else if (/^!\w+$/.test(token)) {
+      statusOverride = token.slice(1);
+    } else if (/^>\w[\w\s-]*$/i.test(token)) {
+      targetFolder = token.slice(1);
+    } else {
+      cleanTokens.push(token);
+    }
+  }
+
+  const cleanText = cleanTokens.join('').replace(/\s{2,}/g, ' ').trim();
+  return { explicitTags, statusOverride, typeTag, targetFolder, cleanText };
+}
+
 const MODEL_CASCADE = [
   'claude-sonnet-4-6',
   'claude-haiku-4-5-20251001',
@@ -113,7 +189,7 @@ async function extractMetadata(message: string, urls: string[], urlMeta?: { titl
 /**
  * Format a Date as YYYY-MM-DDTHH:mm (local time, Obsidian-friendly).
  */
-function formatLocalDatetime(date: Date): string {
+export function formatLocalDatetime(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
@@ -122,23 +198,42 @@ function formatLocalDatetime(date: Date): string {
  * Generate markdown content with YAML frontmatter.
  * Title is omitted — the filename IS the title in Obsidian.
  */
-function generateNoteContent(metadata: NoteMetadata, url?: string): string {
+function generateNoteContent(metadata: NoteMetadata, url?: string, options?: CaptureOptions): string {
   const captured = formatLocalDatetime(new Date());
+  const status = options?.statusOverride ?? 'inbox';
 
-  // Ensure captures tag is always included (code-enforced, prepended)
-  const allTags = metadata.tags.includes('captures')
-    ? metadata.tags
+  // Build tags: captures + typeTag + AI tags + explicit tags (deduplicated)
+  let allTags = metadata.tags.includes('captures')
+    ? [...metadata.tags]
     : ['captures', ...metadata.tags];
+
+  if (options?.typeTag && !allTags.includes(options.typeTag)) {
+    allTags = [allTags[0], options.typeTag, ...allTags.slice(1)];
+  }
+  if (options?.explicitTags) {
+    for (const tag of options.explicitTags) {
+      if (!allTags.includes(tag)) allTags.push(tag);
+    }
+  }
 
   const tagsYaml = allTags
     .map((t) => `  - ${t}`)
     .join('\n');
   const urlLine = url ? `\nurl: "${url}"` : '';
 
+  // Forward metadata lines
+  let forwardLines = '';
+  if (options?.forwardInfo) {
+    const { from, author, originalDate } = options.forwardInfo;
+    if (from) forwardLines += `\nforwarded_from: "${from}"`;
+    if (author) forwardLines += `\noriginal_author: "${author}"`;
+    if (originalDate) forwardLines += `\noriginal_date: ${originalDate}`;
+  }
+
   return `---
 captured: ${captured}
 source: telegram
-status: inbox${urlLine}
+status: ${status}${urlLine}${forwardLines}
 tags:
 ${tagsYaml}
 ---
@@ -150,7 +245,8 @@ ${metadata.body}
  * Capture a message as a note: extract metadata, generate content, write file.
  */
 export async function captureNote(
-  message: string
+  message: string,
+  options?: CaptureOptions
 ): Promise<CaptureResult> {
   const urls = extractUrls(message);
   const primaryUrl = urls.length > 0 ? urls[0] : undefined;
@@ -159,8 +255,17 @@ export async function captureNote(
   const urlMeta = primaryUrl ? await fetchPageMetadata(primaryUrl) : undefined;
 
   const metadata = await extractMetadata(message, urls, urlMeta);
-  const content = generateNoteContent(metadata, primaryUrl);
-  const targetDir = urls.length > 0 ? BOOKMARKS_DIR : config.NOTES_DIR;
+  const content = generateNoteContent(metadata, primaryUrl, options);
+
+  // Determine target directory: explicit folder > URL-based routing > default
+  let targetDir: string;
+  if (options?.targetFolder) {
+    targetDir = path.join(config.NOTES_DIR, options.targetFolder);
+    fs.mkdirSync(targetDir, { recursive: true });
+  } else {
+    targetDir = urls.length > 0 ? BOOKMARKS_DIR : config.NOTES_DIR;
+  }
+
   const filePath = resolveFilePath(metadata.title, targetDir);
   fs.writeFileSync(filePath, content, 'utf-8');
 

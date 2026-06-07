@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, afterAll } from 'bun:test';
-import { captureNote } from '../../src/services/note-capture.js';
+import { captureNote, parsePrefixes } from '../../src/services/note-capture.js';
 
 // Shared mock state from tests/setup.ts preload
 const mocks = (globalThis as any).__testMocks;
@@ -172,5 +172,101 @@ describe('captureNote', () => {
     expect(result.filePath).not.toEndWith('Test Note Title.md');
     expect(result.filePath).toMatch(/Test Note Title \d+\.md$/);
     expect(result.filePath).toStartWith('/tmp/test-vault/');
+  });
+
+  test('routes to target folder when options.targetFolder is set', async () => {
+    mocks.fs.existsSyncResult = false;
+    const result = await captureNote('A project idea', { targetFolder: 'Projects/test' });
+
+    expect(result.filePath).toContain('Projects/test');
+  });
+
+  test('includes forward info in frontmatter', async () => {
+    const result = await captureNote('Forwarded content', {
+      forwardInfo: { from: 'My Channel', author: 'editor', originalDate: '2026-05-07T14:30' },
+    });
+
+    const [, content] = mocks.fs.writeFileSyncCalls[0];
+    expect(content).toContain('forwarded_from: "My Channel"');
+    expect(content).toContain('original_author: "editor"');
+    expect(content).toContain('original_date: 2026-05-07T14:30');
+  });
+
+  test('applies explicit tags and type tag from options', async () => {
+    const result = await captureNote('A recipe note', {
+      explicitTags: ['italian', 'pasta'],
+      typeTag: 'recipes',
+    });
+
+    const [, content] = mocks.fs.writeFileSyncCalls[0];
+    expect(content).toContain('  - recipes');
+    expect(content).toContain('  - italian');
+    expect(content).toContain('  - pasta');
+  });
+
+  test('applies status override from options', async () => {
+    const result = await captureNote('An evergreen note', {
+      statusOverride: 'evergreen',
+    });
+
+    const [, content] = mocks.fs.writeFileSyncCalls[0];
+    expect(content).toContain('status: evergreen');
+    expect(content).not.toContain('status: inbox');
+  });
+});
+
+describe('parsePrefixes', () => {
+  test('parses +tag prefixes', () => {
+    const result = parsePrefixes('+recipe +italian My pasta recipe');
+    expect(result.explicitTags).toEqual(['recipe', 'italian']);
+    expect(result.cleanText).toBe('My pasta recipe');
+  });
+
+  test('parses ^type prefix', () => {
+    const result = parsePrefixes('^quote "The only way out is through"');
+    expect(result.typeTag).toBe('quote');
+    expect(result.cleanText).toBe('"The only way out is through"');
+  });
+
+  test('parses !status prefix', () => {
+    const result = parsePrefixes('!evergreen This principle always applies');
+    expect(result.statusOverride).toBe('evergreen');
+    expect(result.cleanText).toBe('This principle always applies');
+  });
+
+  test('parses #project/name prefix', () => {
+    const result = parsePrefixes('#project/alongside A new idea for the project');
+    expect(result.targetFolder).toBe('Projects/alongside');
+    expect(result.cleanText).toBe('A new idea for the project');
+  });
+
+  test('parses >folder prefix', () => {
+    const result = parsePrefixes('>Journal Today I felt great');
+    expect(result.targetFolder).toBe('Journal');
+    expect(result.cleanText).toBe('Today I felt great');
+  });
+
+  test('handles multiple prefix types together', () => {
+    const result = parsePrefixes('#project/focus +idea ^reflection !evergreen The thought');
+    expect(result.targetFolder).toBe('Projects/focus');
+    expect(result.explicitTags).toEqual(['idea']);
+    expect(result.typeTag).toBe('reflection');
+    expect(result.statusOverride).toBe('evergreen');
+    expect(result.cleanText).toBe('The thought');
+  });
+
+  test('does not parse prefixes inside URLs', () => {
+    const result = parsePrefixes('Check https://example.com/+tag/page out');
+    expect(result.explicitTags).toEqual([]);
+    expect(result.cleanText).toContain('https://example.com/+tag/page');
+  });
+
+  test('returns original text when no prefixes', () => {
+    const result = parsePrefixes('Just a normal message with no special syntax');
+    expect(result.cleanText).toBe('Just a normal message with no special syntax');
+    expect(result.explicitTags).toEqual([]);
+    expect(result.typeTag).toBeNull();
+    expect(result.statusOverride).toBeNull();
+    expect(result.targetFolder).toBeNull();
   });
 });

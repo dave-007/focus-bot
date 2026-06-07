@@ -11,6 +11,7 @@ import { isVideoDomain, extractVideoTranscript } from '../utils/video-extract.js
 import { createTelegraphPage } from '../utils/telegraph.js';
 import { getPrompt } from './prompts.js';
 import { logLLMExchange } from '../utils/transcript-log.js';
+import { throttledCall } from '../utils/telegram-rate-limit.js';
 
 export interface EnrichmentContext {
   chatId: number;
@@ -104,7 +105,7 @@ export async function processNote(filePath: string, urls: string[], tg?: Enrichm
   // Send Telegraph link to user
   if (telegraphUrl && tg) {
     try {
-      await tg.api.sendMessage(tg.chatId, telegraphUrl);
+      await throttledCall(tg.chatId, () => tg.api.sendMessage(tg.chatId, telegraphUrl));
     } catch (error) {
       console.warn('[enrichment] Failed to send Telegraph URL:', error);
     }
@@ -113,7 +114,9 @@ export async function processNote(filePath: string, urls: string[], tg?: Enrichm
   // Signal enrichment complete with 💯 (replaces the 👍 from capture)
   if (tg) {
     try {
-      await tg.api.setMessageReaction(tg.chatId, tg.messageId, [{ type: 'emoji', emoji: '💯' }]);
+      await throttledCall(tg.chatId, () =>
+        tg.api.setMessageReaction(tg.chatId, tg.messageId, [{ type: 'emoji', emoji: '💯' }])
+      );
     } catch (error) {
       console.warn('[enrichment] Failed to set reaction:', error);
     }
